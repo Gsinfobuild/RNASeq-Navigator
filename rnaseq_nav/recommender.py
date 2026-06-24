@@ -1,30 +1,29 @@
-def recommend_pipeline(organism, layout):
-
-    organism = organism.lower()
+def recommend_pipeline(study_type):
 
     recommendation = {}
 
-    # Bacteria
-    if "tuberculosis" in organism:
-        recommendation["aligner"] = "HISAT2"
-        recommendation["quantification"] = "featureCounts"
-        recommendation["de"] = "DESeq2"
+    if study_type == "Bulk RNA-seq":
 
-    # Human
-    elif "homo sapiens" in organism:
         recommendation["aligner"] = "STAR"
         recommendation["quantification"] = "featureCounts"
-        recommendation["de"] = "DESeq2"
+        recommendation["analysis"] = "DESeq2"
 
-    # Mouse
-    elif "mus musculus" in organism:
-        recommendation["aligner"] = "STAR"
-        recommendation["quantification"] = "featureCounts"
-        recommendation["de"] = "DESeq2"
+    elif study_type == "Small RNA-seq":
+
+        recommendation["aligner"] = "Bowtie"
+        recommendation["quantification"] = "miRDeep2"
+        recommendation["analysis"] = "DESeq2"
+
+    elif study_type == "Metagenomics":
+
+        recommendation["aligner"] = "Kraken2"
+        recommendation["quantification"] = "Bracken"
+        recommendation["analysis"] = "MetaPhlAn"
 
     else:
-        recommendation["aligner"] = "HISAT2"
-        recommendation["quantification"] = "featureCounts"
-        recommendation["de"] = "DESeq2"
+
+        recommendation["aligner"] = "Unknown"
+        recommendation["quantification"] = "Unknown"
+        recommendation["analysis"] = "Unknown"
 
     return recommendation
