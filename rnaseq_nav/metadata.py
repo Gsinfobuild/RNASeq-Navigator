@@ -2,8 +2,11 @@ import requests
 
 
 def fetch_study_info(accession):
+    """
+    Retrieve study and run metadata from ENA.
+    """
 
-    # Study metadata
+    # Study-level metadata
     study_url = (
         "https://www.ebi.ac.uk/ena/portal/api/search?"
         f"result=study&query=study_accession={accession}"
@@ -21,11 +24,11 @@ def fetch_study_info(accession):
     if len(study_data) == 0:
         return None
 
-    # Run metadata
+    # Run-level metadata
     run_url = (
         "https://www.ebi.ac.uk/ena/portal/api/search?"
         f"result=read_run&query=study_accession={accession}"
-        "&fields=run_accession,instrument_platform,library_layout"
+        "&fields=run_accession,sample_accession,sample_alias,experiment_title,instrument_platform,library_layout"
         "&format=json"
     )
 
@@ -35,6 +38,15 @@ def fetch_study_info(accession):
         return None
 
     run_data = run_response.json()
+
+    # Debug output
+    print("\nDEBUG OUTPUT")
+    print("=" * 60)
+
+    for row in run_data[:5]:
+        print(row)
+
+    print("=" * 60)
 
     sample_count = len(run_data)
 
@@ -57,5 +69,6 @@ def fetch_study_info(accession):
         "scientific_name": study_data[0]["scientific_name"],
         "sample_count": sample_count,
         "platform": platform,
-        "layout": layout
+        "layout": layout,
+        "run_metadata": run_data
     }
