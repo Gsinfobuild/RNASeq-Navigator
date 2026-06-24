@@ -1,5 +1,6 @@
 import typer
 from metadata import fetch_study_info
+from recommender import recommend_pipeline
 
 app = typer.Typer()
 
@@ -18,6 +19,21 @@ def analyze(accession: str):
 
     print(f"Accession: {study['study_accession']}")
     print(f"Organism: {study['scientific_name']}")
+    print(f"Samples: {study['sample_count']}")
+    print(f"Platform: {study['platform']}")
+    print(f"Layout: {study['layout']}")
+
+    recommendation = recommend_pipeline(
+        study["scientific_name"],
+        study["layout"]
+    )
+
+    print("\nRecommended Pipeline")
+    print("-" * 25)
+
+    print(f"Aligner: {recommendation['aligner']}")
+    print(f"Quantification: {recommendation['quantification']}")
+    print(f"Differential Expression: {recommendation['de']}")
 
 @app.command()
 def version():
