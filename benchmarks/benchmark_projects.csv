@@ -1,5 +1,5 @@
-accession,expected_type,expected_pipeline,organism,platform,layout,validated,notes
-PRJNA799829,Small RNA-seq,Bowtie,mycobacterium tuberculosis h37rv,ILLUMINA,PAIRED,Yes,Validated during v0.8 development
-PRJNA799832,Metagenomics,Kraken2,human gut metagenome,ILLUMINA,PAIRED,Yes,Validated during v0.8 development
-PRJNA799834,Bulk RNA-seq,STAR,Unknown,ILLUMINA,SINGLE,Yes,Validated during v0.8 development
-PRJNA799833,Unknown,Unknown,bacillus sp. r45,Unknown,Unknown,Yes,No sequencing runs available
+accession,expected_type,expected_pipeline,expected_platform,expected_layout,organism,source,validated,notes
+PRJNA799829,Small RNA-seq,Bowtie,ILLUMINA,PAIRED,mycobacterium tuberculosis h37rv,Manual validation,Yes,Validated during v0.8 development
+PRJNA799832,Metagenomics,Kraken2,ILLUMINA,PAIRED,human gut metagenome,Manual validation,Yes,Validated during v0.8 development
+PRJNA799834,Bulk RNA-seq,STAR,ILLUMINA,SINGLE,Unknown,Manual validation,Yes,Validated during v0.8 development
+PRJNA799833,Unknown,Unknown,Unknown,Unknown,bacillus sp. r45,Manual validation,Yes,No sequencing runs available
