@@ -1,9 +1,27 @@
+"""
+RNASeq Navigator
+
+Experimental Design Assessment
+
+Version 0.9
+"""
+
 from collections import Counter
 
 
 def assess_design(run_metadata):
     """
-    Assess experimental design based on sequencing run metadata.
+    Assess experimental design using run metadata.
+
+    Parameters
+    ----------
+    run_metadata : list
+        List of sequencing run dictionaries returned by metadata.py
+
+    Returns
+    -------
+    dict
+        Experimental design summary.
     """
 
     conditions = []
@@ -34,7 +52,7 @@ def assess_design(run_metadata):
         quality = "Unbalanced"
 
     return {
-        "conditions": counts,
+        "conditions": dict(counts),
         "largest": largest,
         "smallest": smallest,
         "quality": quality
