@@ -3,32 +3,39 @@ RNASeq Navigator
 
 Command Line Interface
 
-Version 0.9
+Version 1.0
 """
 
 import typer
 
 from rnaseq_nav.analysis_engine import analyze_accession
+from rnaseq_nav.exporters.json_exporter import export_json
 
-app = typer.Typer()
+app = typer.Typer(
+    help="RNASeq Navigator - Intelligent BioProject Analysis"
+)
 
+
+# ==========================================================
+# Console Renderer
+# ==========================================================
 
 def render_console_report(result):
     """
-    Render a console report from the analysis engine output.
+    Render the standard console report.
     """
 
     summary = result["summary"]
     classification = result["classification"]
-    conditions = result["conditions"]
     design = result["design"]
     recommendation = result["recommendation"]
+    conditions = design["conditions"] if design else {}
 
     print("\nRNASeq Navigator Report")
     print("=" * 45)
 
     print(f"Accession        : {summary['accession']}")
-    print(f"Organism         : {summary['organism'] or 'Unknown'}")
+    print(f"Organism         : {summary['organism']}")
     print(f"Study Type       : {classification['study_type']}")
     print(f"Confidence       : {classification['confidence']}%")
     print(f"Runs             : {summary['runs']}")
@@ -72,8 +79,20 @@ def render_console_report(result):
     print(f"Analysis       : {recommendation['analysis']}")
 
 
+# ==========================================================
+# Analyze Command
+# ==========================================================
+
 @app.command()
-def analyze(accession: str):
+def analyze(
+    accession: str,
+    output: str = typer.Option(
+        "console",
+        "--output",
+        "-o",
+        help="Output format: console or json",
+    ),
+):
     """
     Analyze a BioProject accession.
     """
@@ -81,20 +100,41 @@ def analyze(accession: str):
     result = analyze_accession(accession)
 
     if result is None:
-        print("Accession not found.")
-        return
+        typer.echo("Accession not found.")
+        raise typer.Exit()
 
-    render_console_report(result)
+    output = output.lower()
 
+    if output == "console":
+        render_console_report(result)
+
+    elif output == "json":
+        print(export_json(result))
+
+    else:
+        typer.echo(f"\nUnsupported output format: {output}")
+        typer.echo("\nSupported formats:")
+        typer.echo("  • console")
+        typer.echo("  • json")
+        raise typer.Exit(code=1)
+
+
+# ==========================================================
+# Version Command
+# ==========================================================
 
 @app.command()
 def version():
     """
-    Show software version.
+    Show current software version.
     """
 
-    print("RNASeq Navigator v0.9-dev")
+    print("RNASeq Navigator v1.0-dev")
 
+
+# ==========================================================
+# Entry Point
+# ==========================================================
 
 if __name__ == "__main__":
     app()
