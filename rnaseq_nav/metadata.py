@@ -1,22 +1,32 @@
 """
 RNASeq Navigator
-Metadata Retrieval Engine v2.0
+Metadata Retrieval Engine v2.1
 
-Retrieves study and run metadata from ENA
+Retrieves study and run metadata from the ENA Portal API
 and performs metadata normalization.
 """
 
 import re
 import requests
+from requests.exceptions import RequestException
 
 
-# --------------------------------------------------------
-# NORMALIZER
-# --------------------------------------------------------
+# ==========================================================
+# Text Normalization
+# ==========================================================
 
-def normalize_text(text):
+def normalize_text(text: str) -> str:
     """
-    Normalize free-text metadata.
+    Normalize free-text metadata for downstream analysis.
+
+    Parameters
+    ----------
+    text : str
+
+    Returns
+    -------
+    str
+        Normalized text.
     """
 
     if not text:
@@ -43,18 +53,24 @@ def normalize_text(text):
     return text
 
 
-# --------------------------------------------------------
-# METADATA RETRIEVAL
-# --------------------------------------------------------
+# ==========================================================
+# Metadata Retrieval
+# ==========================================================
 
-def fetch_study_info(accession):
+def fetch_study_info(accession: str):
     """
-    Download metadata from ENA Portal API.
-    """
+    Retrieve study and run metadata from the ENA Portal API.
 
-    # -------------------------
-    # Study metadata
-    # -------------------------
+    Parameters
+    ----------
+    accession : str
+        BioProject accession.
+
+    Returns
+    -------
+    dict | None
+        Normalized study metadata or None if retrieval fails.
+    """
 
     study_url = (
         "https://www.ebi.ac.uk/ena/portal/api/search?"
@@ -62,20 +78,6 @@ def fetch_study_info(accession):
         "&fields=study_accession,scientific_name"
         "&format=json"
     )
-
-    response = requests.get(study_url)
-
-    if response.status_code != 200:
-        return None
-
-    study_data = response.json()
-
-    if len(study_data) == 0:
-        return None
-
-    # -------------------------
-    # Run metadata
-    # -------------------------
 
     run_url = (
         "https://www.ebi.ac.uk/ena/portal/api/search?"
@@ -94,16 +96,28 @@ def fetch_study_info(accession):
         "&format=json"
     )
 
-    response = requests.get(run_url)
+    try:
 
-    if response.status_code != 200:
+        study_response = requests.get(study_url, timeout=30)
+        study_response.raise_for_status()
+
+        study_data = study_response.json()
+
+        if not study_data:
+            return None
+
+        run_response = requests.get(run_url, timeout=30)
+        run_response.raise_for_status()
+
+        run_data = run_response.json()
+
+    except RequestException:
+
         return None
 
-    run_data = response.json()
-
-    # -------------------------
-    # Normalize metadata
-    # -------------------------
+    # ------------------------------------------------------
+    # Normalize run metadata
+    # ------------------------------------------------------
 
     for row in run_data:
 
@@ -132,13 +146,13 @@ def fetch_study_info(accession):
             "Unknown"
         )
 
-    # -------------------------
-    # Summary
-    # -------------------------
+    # ------------------------------------------------------
+    # Study summary
+    # ------------------------------------------------------
 
     sample_count = len(run_data)
 
-    if sample_count > 0:
+    if sample_count:
 
         platform = run_data[0].get(
             "instrument_platform",
@@ -156,44 +170,15 @@ def fetch_study_info(accession):
         layout = "Unknown"
 
     return {
-
         "study_accession": study_data[0]["study_accession"],
-
         "scientific_name": normalize_text(
             study_data[0].get(
                 "scientific_name",
                 ""
             )
         ),
-
         "sample_count": sample_count,
-
         "platform": platform,
-
         "layout": layout,
-
-        "run_metadata": run_data
-
+        "run_metadata": run_data,
     }
-    print("\nFIRST RUN METADATA")
-    print("=" * 70)
-
-    if run_data:
-       first = run_data[0]
-
-    fields = [
-        "run_accession",
-        "experiment_title",
-        "sample_alias",
-        "library_strategy",
-        "library_source",
-        "library_selection",
-        "library_layout",
-        "instrument_platform",
-        "instrument_model"
-    ]
-
-    for field in fields:
-        print(f"{field:20}: {first.get(field, 'Missing')}")
-
-    print("=" * 70)
