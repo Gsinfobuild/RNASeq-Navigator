@@ -1,0 +1,2 @@
+accession,organism,platform,layout,expected_type,status,source,notes
+PRJNA1471148,arabidopsis thaliana,ILLUMINA,SINGLE,Small RNA-seq,Validated,Manual validation,Validated using RNASeq Navigator

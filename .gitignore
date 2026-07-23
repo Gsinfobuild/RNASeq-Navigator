@@ -1,6 +1,22 @@
-venv/
+# Ignore generated benchmark reports
+benchmarks/results/*.md
+benchmarks/results/*.csv
+benchmarks/results/*.json
+
+# Keep the directory in Git
+!benchmarks/results/.gitkeep
+
+# Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.log
-.DS_Store
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+
+# Benchmark outputs
+benchmarks/results/*.md
+benchmarks/results/*.csv
+benchmarks/results/*.json
+!benchmarks/results/.gitkeep

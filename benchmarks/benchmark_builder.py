@@ -3,59 +3,61 @@ RNASeq Navigator
 
 Benchmark Builder
 
-Version 0.9
+Version 1.0
+
+Combines all benchmark category files into one
+master benchmark CSV.
 """
 
+from pathlib import Path
 import csv
 
 
-def load_benchmark(csv_file):
-    """
-    Load benchmark dataset.
-    """
+CATEGORY_DIR = Path("benchmarks/categories")
 
-    projects = []
-
-    with open(csv_file, newline="", encoding="utf-8") as f:
-
-        reader = csv.DictReader(f)
-
-        for row in reader:
-            projects.append(row)
-
-    return projects
+OUTPUT_FILE = Path("benchmarks/benchmark_projects.csv")
 
 
-def benchmark_summary(projects):
+def build_benchmark():
 
-    print("\nRNASeq Navigator Benchmark")
-    print("=" * 45)
+    rows = []
 
-    print(f"Projects : {len(projects)}")
+    for csv_file in sorted(CATEGORY_DIR.glob("*.csv")):
 
-    study_types = {}
+        with open(csv_file, newline="", encoding="utf-8") as handle:
 
-    for project in projects:
+            reader = csv.DictReader(handle)
 
-        study = project["expected_type"]
+            for row in reader:
+                rows.append(row)
 
-        study_types[study] = study_types.get(study, 0) + 1
+    if not rows:
+        print("No benchmark entries found.")
+        return
 
-    print("\nStudy Types")
+    fieldnames = rows[0].keys()
 
-    print("-" * 45)
+    with open(
+        OUTPUT_FILE,
+        "w",
+        newline="",
+        encoding="utf-8",
+    ) as handle:
 
-    for study, count in sorted(study_types.items()):
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=fieldnames,
+        )
 
-        print(f"{study:<20} {count}")
+        writer.writeheader()
 
-    print("=" * 45)
+        writer.writerows(rows)
+
+    print(f"Benchmark written to {OUTPUT_FILE}")
+
+    print(f"Total projects: {len(rows)}")
 
 
 if __name__ == "__main__":
 
-    projects = load_benchmark(
-        "benchmarks/benchmark_projects.csv"
-    )
-
-    benchmark_summary(projects)
+    build_benchmark()
