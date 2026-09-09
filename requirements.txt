@@ -4,3 +4,4 @@ typer
 pydantic
 biopython
 pandas
+reportlab
