@@ -1,22 +1,51 @@
-# Ignore generated benchmark reports
-benchmarks/results/*.md
-benchmarks/results/*.csv
-benchmarks/results/*.json
-
-# Keep the directory in Git
-!benchmarks/results/.gitkeep
-
-# Python cache
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.so
 
-# Virtual environment
+# Virtual environments
 venv/
-.env
+.venv/
+env/
 
-# Benchmark outputs
-benchmarks/results/*.md
-benchmarks/results/*.csv
-benchmarks/results/*.json
-!benchmarks/results/.gitkeep
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Local configuration / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# RNA-seq data
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.sra
+
+# Large sequencing/output files
+data/
+downloads/
+results/
+output/
+tmp/
+cache/
+
+# Streamlit
+.streamlit/secrets.toml

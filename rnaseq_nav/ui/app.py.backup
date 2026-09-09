@@ -1,0 +1,1133 @@
+"""
+RNASeq Navigator
+
+Streamlit User Interface
+Version 1.0
+
+Purpose
+-------
+Provides a web interface for inspecting any valid
+SRA run accession through the RNASeq Navigator API.
+
+The UI communicates only with:
+
+    RNASeqNavigator.inspect()
+
+Backend pipeline:
+
+    SRA Accession
+          ↓
+    Dataset Discovery
+          ↓
+    Normalization
+          ↓
+    Validation
+          ↓
+    Interpretation
+          ↓
+    Dataset Report
+          ↓
+    Streamlit UI
+"""
+
+# ==========================================================
+# Standard Library
+# ==========================================================
+
+import sys
+import json
+from pathlib import Path
+from dataclasses import asdict, is_dataclass
+
+
+# ==========================================================
+# Make project root importable
+# ==========================================================
+
+# app.py is located at:
+#
+# RNASeq-Navigator/
+# └── rnaseq_nav/
+#     └── ui/
+#         └── app.py
+#
+# Therefore parents[2] is the project root.
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(
+        0,
+        str(PROJECT_ROOT)
+    )
+
+
+# ==========================================================
+# Third-party
+# ==========================================================
+
+import streamlit as st
+
+
+# ==========================================================
+# RNASeq Navigator
+# ==========================================================
+
+from rnaseq_nav import RNASeqNavigator
+
+
+# ==========================================================
+# Page Configuration
+# ==========================================================
+
+st.set_page_config(
+
+    page_title="RNASeq Navigator",
+
+    page_icon="🧬",
+
+    layout="wide",
+
+    initial_sidebar_state="collapsed",
+
+)
+
+
+# ==========================================================
+# Custom Styling
+# ==========================================================
+
+st.markdown(
+    """
+    <style>
+
+    .main-title {
+        font-size: 2.8rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+
+    .subtitle {
+        font-size: 1.05rem;
+        color: #888888;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 650;
+        margin-top: 2rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .section-description {
+        color: #888888;
+        margin-bottom: 1rem;
+    }
+
+    .accession-example {
+        color: #21c55d;
+        font-family: monospace;
+    }
+
+    .report-box {
+        padding: 1rem;
+        border-radius: 0.6rem;
+        border: 1px solid rgba(128, 128, 128, 0.25);
+        margin-bottom: 1rem;
+    }
+
+    .small-label {
+        font-size: 0.78rem;
+        color: #888888;
+        margin-bottom: 0.15rem;
+    }
+
+    .small-value {
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ==========================================================
+# Helper Functions
+# ==========================================================
+
+def get_value(
+    obj,
+    attribute,
+    default="—",
+):
+    """
+    Safely retrieve an attribute from an object.
+    """
+
+    if obj is None:
+
+        return default
+
+    value = getattr(
+        obj,
+        attribute,
+        default,
+    )
+
+    if value is None:
+
+        return default
+
+    if value == "":
+
+        return default
+
+    return value
+
+
+# ----------------------------------------------------------
+
+
+def format_number(value):
+    """
+    Format numeric values with thousands separators.
+    """
+
+    if value is None:
+
+        return "—"
+
+    try:
+
+        return f"{int(value):,}"
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+
+        return str(value)
+
+
+# ----------------------------------------------------------
+
+
+def object_to_dict(obj):
+    """
+    Convert dataclass/object structures into
+    JSON-compatible dictionaries.
+    """
+
+    if obj is None:
+
+        return None
+
+    if is_dataclass(obj):
+
+        return asdict(obj)
+
+    if isinstance(obj, dict):
+
+        return {
+            str(key): object_to_dict(value)
+            for key, value in obj.items()
+        }
+
+    if isinstance(obj, list):
+
+        return [
+            object_to_dict(item)
+            for item in obj
+        ]
+
+    if isinstance(obj, tuple):
+
+        return [
+            object_to_dict(item)
+            for item in obj
+        ]
+
+    if hasattr(
+        obj,
+        "__dict__",
+    ):
+
+        return {
+            str(key): object_to_dict(value)
+            for key, value in vars(obj).items()
+        }
+
+    return obj
+
+
+# ----------------------------------------------------------
+
+
+def render_field(
+    label,
+    value,
+):
+    """
+    Render a small label/value pair.
+    """
+
+    st.markdown(
+        f"""
+        <div class="report-box">
+
+            <div class="small-label">
+                {label}
+            </div>
+
+            <div class="small-value">
+                {value}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ----------------------------------------------------------
+
+
+def render_section_title(
+    title,
+    description=None,
+):
+    """
+    Render a consistent section heading.
+    """
+
+    st.markdown(
+        f"""
+        <div class="section-title">
+            {title}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if description:
+
+        st.markdown(
+            f"""
+            <div class="section-description">
+                {description}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+# ==========================================================
+# Header
+# ==========================================================
+
+st.markdown(
+    """
+    <div class="main-title">
+        🧬 RNASeq Navigator
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="subtitle">
+        Explore information associated with an RNA-seq/SRA accession.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ==========================================================
+# Introduction
+# ==========================================================
+
+st.write(
+    "Enter any valid SRA accession to inspect the available "
+    "dataset metadata."
+)
+
+st.caption(
+    "Examples: SRR17730393, SRR17730394, SRR17730395, SRX35161265"
+)
+
+
+# ==========================================================
+# Dataset Accession
+# ==========================================================
+
+render_section_title(
+    "Dataset accession"
+)
+
+accession = st.text_input(
+
+    "Enter an SRA accession",
+
+    value="SRR17730393",
+
+    placeholder="e.g. SRR17730393",
+
+)
+
+
+# ==========================================================
+# NCBI Configuration
+# ==========================================================
+# Email is used internally for NCBI requests.
+# It is intentionally not displayed in the user interface.
+
+NCBI_EMAIL = "gshankar.bbaul@gmail.com"
+
+
+# ==========================================================
+# Inspect Button
+# ==========================================================
+
+inspect_clicked = st.button(
+
+    "🔍 Inspect Dataset",
+
+    type="primary",
+
+    use_container_width=True,
+
+)
+
+
+# ==========================================================
+# Input Validation
+# ==========================================================
+
+if inspect_clicked:
+
+    accession = accession.strip().upper()
+
+    if not accession:
+
+        st.error(
+            "Please enter an SRA accession number."
+        )
+
+        st.stop()
+
+
+# ==========================================================
+# Dataset Inspection
+# ==========================================================
+
+if inspect_clicked:
+
+    with st.spinner(
+        f"Retrieving dataset information for {accession}..."
+    ):
+
+        try:
+
+            navigator = RNASeqNavigator(
+
+                email=NCBI_EMAIL
+
+            )
+
+            result = navigator.inspect(
+
+                accession
+
+            )
+
+        except Exception as exc:
+
+            st.error(
+                f"RNASeq Navigator encountered an unexpected error."
+            )
+
+            st.exception(exc)
+
+            st.stop()
+
+
+    # ======================================================
+    # Failure
+    # ======================================================
+
+    if not result.success:
+
+        st.error(
+            f"RNASeq Navigator could not inspect {accession}."
+        )
+
+        if result.error:
+
+            st.code(
+                str(result.error)
+            )
+
+        st.stop()
+
+
+    # ======================================================
+    # Success Message
+    # ======================================================
+
+    st.success(
+        f"Dataset information retrieved for {accession}"
+    )
+
+
+    # ======================================================
+    # Extract Main Objects
+    # ======================================================
+
+    report = result.report
+
+    metadata = result.metadata
+
+    normalization = result.normalization
+
+    validation = result.validation
+
+
+    # ======================================================
+    # Dataset Overview
+    # ======================================================
+
+    render_section_title(
+
+        "Dataset Overview",
+
+        "Basic identity and biological information.",
+
+    )
+
+    # The input may be a run accession (SRR/ERR/DRR)
+    # or an experiment accession (SRX/ERX/DRX).
+    # Fall back to the experiment accession when no
+    # run accession is available.
+
+    run = get_value(
+        report,
+        "run",
+        None,
+    )
+
+    if run is None:
+        run = get_value(
+            report,
+            "experiment",
+            accession,
+        )
+
+    study = get_value(
+        report,
+        "study",
+    )
+
+    experiment = get_value(
+        report,
+        "experiment",
+    )
+
+    organism = get_value(
+        report,
+        "organism",
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+
+        st.metric(
+            "Run",
+            run,
+        )
+
+    with col2:
+
+        st.metric(
+            "Study",
+            study,
+        )
+
+    with col3:
+
+        st.metric(
+            "Experiment",
+            experiment,
+        )
+
+    with col4:
+
+        st.metric(
+            "Organism",
+            organism,
+        )
+
+
+    # ======================================================
+    # Dataset Identity
+    # ======================================================
+
+    render_section_title(
+        "Dataset Identity"
+    )
+
+    project = get_value(
+        report,
+        "project",
+    )
+
+    sample = "—"
+
+    if metadata is not None:
+
+        sample_object = getattr(
+            metadata,
+            "sample",
+            None,
+        )
+
+        sample = get_value(
+            sample_object,
+            "accession",
+        )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        render_field(
+            "Input / Run accession",
+            run,
+        )
+
+        render_field(
+            "Study accession",
+            study,
+        )
+
+        render_field(
+            "Experiment accession",
+            experiment,
+        )
+
+    with col2:
+
+        render_field(
+            "BioProject",
+            project,
+        )
+
+        render_field(
+            "BioSample",
+            sample,
+        )
+
+        render_field(
+            "Organism",
+            organism,
+        )
+
+
+    # ======================================================
+    # Experiment Information
+    # ======================================================
+
+    render_section_title(
+
+        "Experiment Information",
+
+        "Information describing the sequencing experiment.",
+
+    )
+
+    title = get_value(
+        report,
+        "title",
+    )
+
+    strategy = get_value(
+        report,
+        "strategy",
+    )
+
+    layout = get_value(
+        report,
+        "layout",
+    )
+
+    sequencing_description = get_value(
+        report,
+        "sequencing",
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        render_field(
+            "Experiment title",
+            title,
+        )
+
+        render_field(
+            "Library strategy",
+            strategy,
+        )
+
+    with col2:
+
+        render_field(
+            "Layout",
+            layout,
+        )
+
+        render_field(
+            "Sequencing description",
+            sequencing_description,
+        )
+
+
+    # ======================================================
+    # Sequencing Information
+    # ======================================================
+
+    render_section_title(
+        "Sequencing Information"
+    )
+
+    platform = get_value(
+        report,
+        "platform",
+    )
+
+    instrument = get_value(
+        report,
+        "instrument",
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.metric(
+            "Platform",
+            platform,
+        )
+
+    with col2:
+
+        st.metric(
+            "Instrument",
+            instrument,
+        )
+
+    with col3:
+
+        st.metric(
+            "Layout",
+            layout,
+        )
+
+
+    # ======================================================
+    # Dataset Statistics
+    # ======================================================
+
+    render_section_title(
+
+        "Dataset Statistics",
+
+        "Sequencing statistics reported for the run.",
+
+    )
+
+    total_spots = get_value(
+        report,
+        "total_spots",
+        None,
+    )
+
+    total_bases = get_value(
+        report,
+        "total_bases",
+        None,
+    )
+
+
+    # Public status
+
+    public = "—"
+
+    if metadata is not None:
+
+        run_object = getattr(
+            metadata,
+            "run",
+            None,
+        )
+
+        public_value = get_value(
+            run_object,
+            "public",
+            None,
+        )
+
+        if public_value is not None:
+
+            if isinstance(
+                public_value,
+                bool,
+            ):
+
+                public = (
+                    "Yes"
+                    if public_value
+                    else "No"
+                )
+
+            else:
+
+                public = str(
+                    public_value
+                )
+
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        st.metric(
+            "Reads / Spots",
+            format_number(total_spots),
+        )
+
+    with col2:
+
+        st.metric(
+            "Bases",
+            format_number(total_bases),
+        )
+
+    with col3:
+
+        st.metric(
+            "Public",
+            public,
+        )
+
+
+    # ======================================================
+    # Metadata Quality
+    # ======================================================
+
+    render_section_title(
+
+        "Metadata Quality",
+
+        "Information produced by the validation and "
+        "normalization layers.",
+
+    )
+
+    validation_score = get_value(
+
+        report,
+
+        "validation_score",
+
+        None,
+
+    )
+
+    normalization_changes = get_value(
+
+        report,
+
+        "normalization_changes",
+
+        None,
+
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader(
+            "Validation"
+        )
+
+        st.metric(
+
+            "Validation score",
+
+            (
+                validation_score
+                if validation_score is not None
+                else "—"
+            ),
+
+        )
+
+        if validation is not None:
+
+            issues = getattr(
+                validation,
+                "issues",
+                None,
+            )
+
+            if issues is not None:
+
+                st.write(
+                    f"Issues reported: {len(issues)}"
+                )
+
+    with col2:
+
+        st.subheader(
+            "Normalization"
+        )
+
+        st.metric(
+
+            "Normalization changes",
+
+            (
+                normalization_changes
+                if normalization_changes is not None
+                else "—"
+            ),
+
+        )
+
+
+    # ======================================================
+    # Dataset Report
+    # ======================================================
+
+    render_section_title(
+
+        "Dataset Report",
+
+        "Integrated information available from the "
+        "reporting layer.",
+
+    )
+
+
+    # ------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------
+
+    summary = get_value(
+        report,
+        "summary",
+        "",
+    )
+
+    if summary:
+
+        st.subheader(
+            "Summary"
+        )
+
+        st.write(
+            summary
+        )
+
+
+    # ------------------------------------------------------
+    # Sequencing Interpretation
+    # ------------------------------------------------------
+
+    sequencing = get_value(
+        report,
+        "sequencing",
+        "",
+    )
+
+    if sequencing:
+
+        st.subheader(
+            "Sequencing interpretation"
+        )
+
+        st.write(
+            sequencing
+        )
+
+
+    # ------------------------------------------------------
+    # Strengths
+    # ------------------------------------------------------
+
+    strengths = getattr(
+        report,
+        "strengths",
+        [],
+    )
+
+    if strengths:
+
+        st.subheader(
+            "Strengths"
+        )
+
+        for strength in strengths:
+
+            st.markdown(
+                f"- {strength}"
+            )
+
+
+    # ------------------------------------------------------
+    # Limitations
+    # ------------------------------------------------------
+
+    limitations = getattr(
+        report,
+        "limitations",
+        [],
+    )
+
+    if limitations:
+
+        st.subheader(
+            "Limitations"
+        )
+
+        for limitation in limitations:
+
+            st.markdown(
+                f"- {limitation}"
+            )
+
+
+    # ======================================================
+    # Structured Metadata
+    # ======================================================
+
+    with st.expander(
+        "View structured metadata"
+    ):
+
+        metadata_dict = object_to_dict(
+            metadata
+        )
+
+        st.json(
+            metadata_dict
+        )
+
+
+    # ======================================================
+    # Normalization Details
+    # ======================================================
+
+    with st.expander(
+        "View normalization details"
+    ):
+
+        normalization_dict = object_to_dict(
+            normalization
+        )
+
+        st.json(
+            normalization_dict
+        )
+
+
+    # ======================================================
+    # Validation Details
+    # ======================================================
+
+    with st.expander(
+        "View validation details"
+    ):
+
+        validation_dict = object_to_dict(
+            validation
+        )
+
+        st.json(
+            validation_dict
+        )
+
+
+    # ======================================================
+    # Complete Inspection Result
+    # ======================================================
+
+    with st.expander(
+        "View complete inspection result"
+    ):
+
+        result_dict = object_to_dict(
+            result
+        )
+
+        st.json(
+            result_dict
+        )
+
+
+    # ======================================================
+    # JSON Export
+    # ======================================================
+
+    render_section_title(
+        "Export"
+    )
+
+    result_dict = object_to_dict(
+        result
+    )
+
+    json_data = json.dumps(
+
+        result_dict,
+
+        indent=2,
+
+        ensure_ascii=False,
+
+        default=str,
+
+    )
+
+    st.download_button(
+
+        label="Download inspection result (JSON)",
+
+        data=json_data,
+
+        file_name=f"{accession}_inspection.json",
+
+        mime="application/json",
+
+        use_container_width=True,
+
+    )
+
+
+# ==========================================================
+# Initial State
+# ==========================================================
+
+else:
+
+    st.info(
+        "Enter an SRA accession above and click "
+        "'Inspect Dataset' to begin."
+    )

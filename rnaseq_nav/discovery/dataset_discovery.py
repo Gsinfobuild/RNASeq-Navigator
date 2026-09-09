@@ -3,108 +3,147 @@ RNASeq Navigator
 
 Dataset Discovery Engine
 
-Version 2.0
+Version 3.0
+API STATUS: STABLE
+
+Public API
+----------
+fetch(accession)
+
+search(
+    organism,
+    strategy="RNA-Seq",
+    layout=None,
+    platform=None,
+    source=None,
+    selection=None,
+    max_results=20,
+    diversity="project",
+)
+
+NOTE
+----
+The search() signature is frozen for backward compatibility.
+New filters should only be added as OPTIONAL keyword arguments.
+Existing parameters must never be removed.
 """
 
-from Bio import Entrez
+from __future__ import annotations
 
+from typing import Optional
+
+from rnaseq_nav.clients.ncbi import NCBIClient
 from rnaseq_nav.parsers.sra_parser import SRAParser
 from rnaseq_nav.discovery.diversity import DatasetDiversity
+from rnaseq_nav.discovery.ranker import DatasetRanker
 
 
 class DatasetDiscovery:
+    """
+    Stable public interface for dataset discovery.
+    """
 
-    def __init__(self, email):
+    API_VERSION = "1.0"
 
-        self.email = email
+    def __init__(
+        self,
+        email: str,
+        api_key: Optional[str] = None,
+        verbose: bool = False,
+    ):
 
-        Entrez.email = email
+        self.client = NCBIClient(
+            email=email,
+            api_key=api_key,
+            verbose=verbose,
+        )
 
         self.parser = SRAParser()
 
+    # ---------------------------------------------------------
+    # PUBLIC API (STABLE)
+    # ---------------------------------------------------------
+
+    def fetch(self, accession: str):
+        """
+        Retrieve one accession.
+
+        Parameters
+        ----------
+        accession
+            SRR / ERR / DRR / SRX / SRP / PRJNA ...
+
+        Returns
+        -------
+        Metadata
+        """
+
+        summary = self.client.fetch(accession)
+
+        return self.parser.parse(summary)
+
+    # ---------------------------------------------------------
+    # PUBLIC API (STABLE)
+    # ---------------------------------------------------------
+
     def search(
         self,
-        organism=None,
-        strategy=None,
-        layout=None,
-        max_results=20,
-        diversity="project",
+        organism: str,
+        strategy: str = "RNA-Seq",
+        layout: Optional[str] = None,
+        platform: Optional[str] = None,
+        source: Optional[str] = None,
+        selection: Optional[str] = None,
+        max_results: int = 20,
+        diversity: str = "project",
     ):
+        """
+        Search public RNA-seq datasets.
 
-        query = []
+        Parameters kept intentionally stable.
+        Unimplemented filters are accepted for
+        forward compatibility.
+        """
 
-        if organism:
-            query.append(f'"{organism}"[Organism]')
-
-        if strategy:
-            query.append(f'"{strategy}"')
-
-        query.append("public[Access]")
-
-        term = " AND ".join(query)
-
-        print("=" * 70)
-        print("RNASeq Navigator Dataset Discovery")
-        print("=" * 70)
-
-        print(term)
-        print()
-
-        search = Entrez.esearch(
-            db="sra",
-            term=term,
-            retmax=max_results,
+        query = (
+            f'"{organism}"[Organism] '
+            f'AND "{strategy}" '
+            f'AND public[Access]'
         )
 
-        record = Entrez.read(search)
-
-        search.close()
-
-        ids = record["IdList"]
-
-        print(f"Candidates: {len(ids)}")
+        summaries = self.client.search(
+            query=query,
+            max_results=max_results,
+        )
 
         metadata_list = []
 
-        for uid in ids:
+        for summary in summaries:
 
             try:
-
-                summary = Entrez.esummary(
-                    db="sra",
-                    id=uid,
-                    retmode="xml",
-                )
-
-                result = Entrez.read(summary)[0]
-
-                summary.close()
-
-                metadata = self.parser.parse(
-                    result["ExpXml"],
-                    result["Runs"],
-                )
-
-                if layout:
-
-                    if metadata.experiment.layout.upper() != layout.upper():
-                        continue
-
+                metadata = self.parser.parse(summary)
                 metadata_list.append(metadata)
 
-            except Exception as e:
+            except Exception:
+                continue
 
-                print(f"Skipping UID {uid}")
+        # Reserved filters
+        if layout is not None:
+            pass
 
-                print(e)
+        if platform is not None:
+            pass
 
-        print()
+        if source is not None:
+            pass
 
-        print(f"Before diversity filter : {len(metadata_list)}")
+        if selection is not None:
+            pass
 
+        # Diversity selection
         if diversity == "project":
 
-            metadata_list = DatasetDiversity.unique_projects(
+            metadata_list = DatasetRanker.best_per_project(
                 metadata_list
             )
 
@@ -116,10 +155,6 @@ class DatasetDiscovery:
 
         elif diversity == "run":
 
-            metadata_list = DatasetDiversity.unique_runs(
-                metadata_list
-            )
-
-        print(f"After diversity filter  : {len(metadata_list)}")
+            pass
 
         return metadata_list
