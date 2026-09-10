@@ -1,12 +1,12 @@
 """
-RNASeq Navigator
+RNASeq Scout
 Streamlit User Interface
 Version 1.2
 
 Purpose
 -------
 Provides a clean web interface for inspecting SRA accessions
-through the RNASeq Navigator API.
+through the RNASeq Scout API.
 
 Supported accessions
 --------------------
@@ -309,7 +309,7 @@ st.markdown(
 
 
 # ==========================================================
-# RNASeq Navigator
+# RNASeq Scout
 # ==========================================================
 
 from rnaseq_nav import RNASeqNavigator
@@ -335,7 +335,7 @@ def render_html(html):
 # ==========================================================
 
 st.set_page_config(
-    page_title="RNASeq Navigator",
+    page_title="RNASeq Scout",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -1454,9 +1454,9 @@ def build_pdf(
         bottomMargin=16 * mm,
         title=(
             f"{accession} - "
-            "RNASeq Navigator Report"
+            "RNASeq Scout Report"
         ),
-        author="RNASeq Navigator",
+        author="RNASeq Scout",
     )
 
 
@@ -1514,7 +1514,7 @@ def build_pdf(
 
     story.append(
         Paragraph(
-            "RNASeq Navigator",
+            "RNASeq Scout",
             title_style,
         )
     )
@@ -2863,7 +2863,7 @@ if inspect_clicked:
         except Exception as exc:
 
             st.error(
-                "RNASeq Navigator encountered an unexpected error."
+                "RNASeq Scout encountered an unexpected error."
             )
 
             st.exception(exc)
@@ -2878,7 +2878,7 @@ if inspect_clicked:
     if not result.success:
 
         st.error(
-            f"RNASeq Navigator could not inspect {accession}."
+            f"RNASeq Scout could not inspect {accession}."
         )
 
         if result.error:
@@ -3621,7 +3621,7 @@ render_html(
 <div class="rna-footer-left">
 
 <span class="rna-footer-brand">
-RNASeq Navigator
+RNASeq Scout
 </span>
 
 <span class="rna-footer-divider">|</span>
