@@ -53,3 +53,12 @@ cache/
 
 # Local development backups
 *.before_*
+
+# Test cache
+.pytest_cache/
+
+# Local diagnostic/debug output
+runinfo_raw_response.txt
+
+# Development backup scripts
+*_backup.py
