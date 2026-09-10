@@ -2727,7 +2727,7 @@ stroke-width="2"/>
 <div class="rna-brand-text">
 
 <div class="rna-title">
-RNASeq <span class="rna-title-green">Navigator</span>
+RNASeq <span class="rna-title-green">Scout</span>
 </div>
 
 <div class="rna-tagline">
@@ -2742,7 +2742,7 @@ Accelerate
 </div>
 
 <div class="rna-gateway">
-A gateway to public RNA-seq data
+From SRA accession to experiment-aware analysis plan
 </div>
 
 <div class="rna-impact">
@@ -3646,6 +3646,12 @@ Developed by
 
 <span class="rna-footer-name">
 Dr. G. Shankar
+</span>
+
+<span class="rna-footer-divider">|</span>
+
+<span class="rna-footer-name">
+Dr. Ranjana Soni
 </span>
 
 <span class="rna-footer-divider">|</span>
