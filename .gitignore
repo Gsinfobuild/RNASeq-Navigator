@@ -50,3 +50,6 @@ cache/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local development backups
+*.before_*

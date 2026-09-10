@@ -82,9 +82,16 @@ st.markdown(
        ------------------------------------------------------ */
 
     .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-        max-width: 1200px;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.5rem !important;
+        max-width: 1500px !important;
+        width: calc(100% - 2rem) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        min-height: calc(100vh - 1rem);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
     }
 
     /* ------------------------------------------------------
@@ -309,6 +316,21 @@ from rnaseq_nav import RNASeqNavigator
 
 
 # ==========================================================
+# HTML Rendering Helper
+# ==========================================================
+
+def render_html(html):
+    """
+    Render custom HTML without Markdown treating indentation
+    as a code block.
+    """
+    lines = html.strip().splitlines()
+    cleaned = "\n".join(line.strip() for line in lines)
+    st.markdown(cleaned, unsafe_allow_html=True)
+
+
+
+# ==========================================================
 # Page Configuration
 # ==========================================================
 
@@ -316,7 +338,7 @@ st.set_page_config(
     page_title="RNASeq Navigator",
     page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 
@@ -328,108 +350,277 @@ st.markdown(
     """
     <style>
 
-    /* -------------------------------------------------- */
-    /* Main page */
-    /* -------------------------------------------------- */
+    /* ======================================================
+       GLOBAL APPLICATION
+       ====================================================== */
+
+    .stApp {
+        background: #ffffff;
+        color: #102a56;
+    }
 
     .block-container {
-        padding-top: 2rem;
-        padding-bottom: 3rem;
-        max-width: 1500px;
+        padding-top: 0.8rem !important;
+        padding-bottom: 1rem !important;
+        max-width: 1500px !important;
+        width: calc(100% - 2rem) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 
+    /* Improve readability in both Streamlit themes */
+    html, body, [class*="css"] {
+        font-family: "Segoe UI", Arial, sans-serif;
+    }
 
-    /* -------------------------------------------------- */
-    /* Main title */
-    /* -------------------------------------------------- */
+    /* ======================================================
+       TOP BRAND HEADER
+       ====================================================== */
+
+    .rna-header {
+        width: 100%;
+        min-height: 105px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 24px;
+        box-sizing: border-box;
+        background: linear-gradient(
+            90deg,
+            #edf6ff 0%,
+            #ffffff 50%,
+            #f7fbff 100%
+        );
+        border-bottom: 1px solid #d8e6f5;
+        margin-bottom: 20px;
+    }
+
+    .rna-brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 430px;
+    }
+
+    .rna-logo {
+        width: 62px;
+        height: 76px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .rna-brand-text {
+        line-height: 1.05;
+    }
+
+    .rna-title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        letter-spacing: -0.8px;
+        color: #1260bd;
+        white-space: nowrap;
+    }
+
+    .rna-title-green {
+        color: #348545;
+    }
+
+    .rna-tagline {
+        margin-top: 7px;
+        font-size: 0.95rem;
+        color: #315a8f;
+        letter-spacing: 0.15px;
+    }
+
+    .rna-tagline span {
+        margin: 0 7px;
+        color: #6f91b7;
+    }
+
+    .rna-gateway {
+        flex: 1;
+        text-align: center;
+        font-size: 1.15rem;
+        color: #204d82;
+        white-space: nowrap;
+    }
+
+    .rna-impact {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        min-width: 175px;
+        justify-content: flex-end;
+    }
+
+    .rna-impact-divider {
+        width: 1px;
+        height: 75px;
+        background: #b7c8da;
+    }
+
+    .rna-leaf {
+        font-size: 3.4rem;
+        line-height: 1;
+        color: #399447;
+        transform: rotate(-15deg);
+    }
+
+    .rna-impact-text {
+        font-size: 0.92rem;
+        line-height: 1.45;
+        color: #102a56;
+        font-weight: 500;
+    }
+
+    /* ======================================================
+       SIDEBAR
+       ====================================================== */
+
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(
+            180deg,
+            #f5f9fe 0%,
+            #edf5fc 100%
+        );
+        border-right: 1px solid #dbe7f3;
+    }
+
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0.7rem;
+    }
+
+    .sidebar-nav {
+        margin-top: 4px;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 15px;
+        margin: 4px 0;
+        border-radius: 7px;
+        font-size: 1rem;
+        color: #102a56;
+    }
+
+    .sidebar-item-active {
+        background: linear-gradient(
+            90deg,
+            #1674df,
+            #1767ce
+        );
+        color: white;
+        font-weight: 600;
+    }
+
+    .sidebar-icon {
+        width: 28px;
+        text-align: center;
+        font-size: 1.25rem;
+    }
+
+    .sidebar-quote {
+        margin-top: 290px;
+        padding: 22px 18px;
+        background: #edf6ff;
+        border: 1px solid #dceaf7;
+        border-radius: 9px;
+        color: #173e72;
+        text-align: center;
+        font-family: Georgia, serif;
+        font-style: italic;
+        font-size: 1rem;
+        line-height: 1.55;
+    }
+
+    /* ======================================================
+       MAIN TITLE
+       ====================================================== */
 
     .main-title {
-        font-size: 2.4rem;
+        font-size: 2.15rem;
         font-weight: 700;
         line-height: 1.2;
-        margin-bottom: 0.35rem;
+        margin-bottom: 0.25rem;
+        color: #102a56;
     }
 
+    .main-title-blue {
+        color: #1768c8;
+    }
+
+    .main-title-green {
+        color: #348545;
+    }
 
     .subtitle {
-        font-size: 1rem;
-        color: #9aa0aa;
-        margin-bottom: 1.4rem;
+        font-size: 1.05rem;
+        color: #173761;
+        margin-bottom: 1.15rem;
     }
 
-
-    /* -------------------------------------------------- */
-    /* Section headings */
-    /* -------------------------------------------------- */
+    /* ======================================================
+       SECTION HEADINGS
+       ====================================================== */
 
     .section-title {
-        font-size: 1.55rem;
-        font-weight: 650;
+        font-size: 1.4rem;
+        font-weight: 700;
         line-height: 1.3;
-        margin-top: 1.8rem;
-        margin-bottom: 0.35rem;
+        margin-top: 1.1rem;
+        margin-bottom: 0.45rem;
+        color: #102a56;
     }
 
-
     .section-description {
-        font-size: 0.92rem;
-        color: #9298a3;
+        font-size: 0.95rem;
+        color: #31527b;
         margin-bottom: 1rem;
     }
 
-
-    /* -------------------------------------------------- */
-    /* Metadata cards */
-    /* -------------------------------------------------- */
+    /* ======================================================
+       CARDS
+       ====================================================== */
 
     .metadata-card {
-        background: #191c23;
-        border: 1px solid #30343d;
-        border-radius: 10px;
-        padding: 16px 18px;
-        margin-bottom: 14px;
+        background: #ffffff;
+        border: 1px solid #d8e5f2;
+        border-radius: 9px;
+        padding: 15px 17px;
+        margin-bottom: 12px;
         min-height: 105px;
         box-sizing: border-box;
+        box-shadow: 0 1px 4px rgba(24, 66, 108, 0.04);
     }
-
 
     .metadata-label {
         font-size: 0.82rem;
         font-weight: 500;
-        color: #aeb4bf;
-        margin-bottom: 9px;
+        color: #31527b;
+        margin-bottom: 7px;
         line-height: 1.3;
     }
 
-
     .metadata-value {
         font-size: 1rem;
-        font-weight: 500;
-        color: #f2f4f7;
-        line-height: 1.5;
+        font-weight: 600;
+        color: #102a56;
+        line-height: 1.45;
         overflow-wrap: anywhere;
         word-break: break-word;
     }
-
-
-    /* -------------------------------------------------- */
-    /* Long metadata values */
-    /* -------------------------------------------------- */
 
     .metadata-card-long {
         min-height: 125px;
     }
 
-
     .metadata-value-long {
         font-size: 0.94rem;
         line-height: 1.55;
     }
-
-
-    /* -------------------------------------------------- */
-    /* Accessions */
-    /* -------------------------------------------------- */
 
     .accession-value {
         font-family: monospace;
@@ -437,49 +628,197 @@ st.markdown(
         letter-spacing: 0.2px;
     }
 
-
-    /* -------------------------------------------------- */
-    /* Report text */
-    /* -------------------------------------------------- */
-
     .report-text {
         font-size: 1rem;
         line-height: 1.65;
-        color: #e7e9ed;
+        color: #172f52;
         margin-bottom: 1rem;
     }
 
+    /* ======================================================
+       INPUTS
+       ====================================================== */
 
-    /* -------------------------------------------------- */
-    /* Export buttons */
-    /* -------------------------------------------------- */
-
-    div.stDownloadButton > button {
-        min-height: 42px;
-        font-size: 0.92rem;
+    div[data-baseweb="input"] {
+        border-radius: 7px;
     }
 
+    div[data-baseweb="input"] > div {
+        background: #ffffff;
+        border-color: #b9cee3;
+    }
 
-    /* -------------------------------------------------- */
-    /* Metric consistency */
-    /* -------------------------------------------------- */
+    input {
+        color: #102a56 !important;
+        font-size: 1.05rem !important;
+    }
+
+    /* ======================================================
+       BUTTONS
+       ====================================================== */
+
+    .stButton > button,
+    div.stDownloadButton > button {
+        border-radius: 7px;
+        min-height: 42px;
+        font-size: 0.92rem;
+        font-weight: 600;
+    }
+
+    .stButton > button {
+        background: #176fd5;
+        color: white;
+        border: 1px solid #176fd5;
+    }
+
+    .stButton > button:hover {
+        background: #125db6;
+        border-color: #125db6;
+        color: white;
+    }
+
+    div.stDownloadButton > button {
+        background: #176fd5;
+        color: white;
+        border: 1px solid #176fd5;
+    }
+
+    /* ======================================================
+       METRICS
+       ====================================================== */
 
     [data-testid="stMetricLabel"] {
         font-size: 0.82rem;
+        color: #31527b;
     }
-
 
     [data-testid="stMetricValue"] {
-        font-size: 1.65rem;
+        font-size: 1.5rem;
+        color: #102a56;
     }
 
+    /* ======================================================
+       EXPANDERS / TABLES
+       ====================================================== */
 
-    /* -------------------------------------------------- */
-    /* Hide Streamlit footer */
-    /* -------------------------------------------------- */
+    div[data-testid="stExpander"] {
+        border-color: #d8e5f2;
+        border-radius: 8px;
+    }
+
+    .stDataFrame {
+        border: 1px solid #d8e5f2;
+        border-radius: 8px;
+    }
+
+    /* ======================================================
+       FOOTER
+       ====================================================== */
 
     footer {
         visibility: hidden;
+    }
+
+    /* ======================================================
+       Landing page spacing
+       ====================================================== */
+
+    .rna-header {
+        flex-shrink: 0;
+    }
+
+    .rna-footer {
+        flex-shrink: 0;
+    }
+
+    .main .block-container > div {
+        flex-shrink: 0;
+    }
+
+    .main .element-container {
+        margin-bottom: 0.35rem !important;
+    }
+
+
+    .rna-footer {
+        margin-top: auto !important;
+        flex-shrink: 0;
+        width: 100%;
+        min-height: 54px;
+        margin-top: 25px;
+        padding: 9px 24px;
+        box-sizing: border-box;
+        background: linear-gradient(
+            90deg,
+            #edf6ff,
+            #f8fbff
+        );
+        border-top: 1px solid #d8e6f5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #173e72;
+        font-size: 0.78rem;
+    }
+
+    .rna-footer-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .rna-footer-brand {
+        color: #1768c8;
+        font-weight: 700;
+    }
+
+    .rna-footer-divider {
+        color: #9bb1c8;
+    }
+
+    .rna-footer-center {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .rna-footer-name {
+        color: #102a56;
+        font-weight: 700;
+    }
+
+    .rna-footer-right {
+        color: #2f5d8e;
+        font-family: Georgia, serif;
+        font-style: italic;
+        text-align: right;
+    }
+
+    /* ======================================================
+       RESPONSIVE
+       ====================================================== */
+
+    @media (max-width: 1000px) {
+        .rna-gateway {
+            display: none;
+        }
+
+        .rna-brand {
+            min-width: auto;
+        }
+
+        .rna-impact {
+            min-width: auto;
+        }
+
+        .rna-title {
+            font-size: 1.7rem;
+        }
+
+        .rna-footer {
+            flex-direction: column;
+            gap: 6px;
+        }
     }
 
     </style>
@@ -491,6 +830,7 @@ st.markdown(
 # ==========================================================
 # Helper Functions
 # ==========================================================
+
 
 def get_value(
     obj,
@@ -1447,6 +1787,671 @@ def build_pdf(
 
 
     # ======================================================
+    # Metadata Intelligence
+    # ======================================================
+
+    metadata_insight = getattr(
+        result,
+        "metadata_insight",
+        None,
+    )
+
+    if metadata_insight is not None:
+
+        render_section_title(
+            "Metadata Intelligence",
+            "Interpretation of the available dataset metadata.",
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            render_field(
+                "Biological system",
+                get_value(
+                    metadata_insight,
+                    "biological_system",
+                ),
+            )
+
+            render_field(
+                "Study type",
+                get_value(
+                    metadata_insight,
+                    "study_type",
+                ),
+            )
+
+        with col2:
+
+            render_field(
+                "Experimental focus",
+                get_value(
+                    metadata_insight,
+                    "experimental_focus",
+                ),
+                long=True,
+            )
+
+            render_field(
+                "Sequencing summary",
+                get_value(
+                    metadata_insight,
+                    "sequencing_summary",
+                ),
+                long=True,
+            )
+
+        observations = get_value(
+            metadata_insight,
+            "observations",
+            [],
+        )
+
+        if observations:
+
+            st.subheader(
+                "Observations"
+            )
+
+            for observation in observations:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(observation))}",
+                    unsafe_allow_html=True,
+                )
+
+
+    # ======================================================
+    # Modality / Workflow Intelligence
+    # ======================================================
+
+    modality_insight = getattr(
+        result,
+        "modality_insight",
+        None,
+    )
+
+    if modality_insight is not None:
+
+        render_section_title(
+            "Modality / Workflow Intelligence",
+            "Classification of the sequencing modality and its compatibility with conventional RNA-seq analysis.",
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            render_field(
+                "Modality",
+                get_value(
+                    modality_insight,
+                    "modality",
+                ),
+            )
+
+        with col2:
+
+            render_field(
+                "Workflow family",
+                get_value(
+                    modality_insight,
+                    "workflow_family",
+                ),
+            )
+
+        with col3:
+
+            compatible = get_value(
+                modality_insight,
+                "rna_seq_compatible",
+                None,
+            )
+
+            if compatible is True:
+                compatibility_label = "Yes"
+            elif compatible is False:
+                compatibility_label = "No"
+            else:
+                compatibility_label = "Uncertain"
+
+            st.metric(
+                "RNA-seq compatible",
+                compatibility_label,
+            )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            render_field(
+                "Library strategy",
+                get_value(
+                    modality_insight,
+                    "library_strategy",
+                ),
+            )
+
+            render_field(
+                "Library source",
+                get_value(
+                    modality_insight,
+                    "library_source",
+                ),
+            )
+
+        with col2:
+
+            render_field(
+                "Library selection",
+                get_value(
+                    modality_insight,
+                    "library_selection",
+                ),
+            )
+
+            render_field(
+                "Compatibility status",
+                get_value(
+                    modality_insight,
+                    "compatibility_status",
+                ),
+            )
+
+        classification_confidence = clean_ui_value(
+            get_value(
+                modality_insight,
+                "classification_confidence",
+            )
+        )
+
+        st.metric(
+            "Classification confidence",
+            classification_confidence,
+        )
+
+        rationale = get_value(
+            modality_insight,
+            "rationale",
+            "",
+        )
+
+        if rationale:
+
+            st.subheader(
+                "Classification rationale"
+            )
+
+            st.markdown(
+                f"""
+                <div class="report-text">
+                    {escape(clean_ui_value(rationale))}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        observed_evidence = get_value(
+            modality_insight,
+            "observed_evidence",
+            [],
+        )
+
+        if observed_evidence:
+
+            st.subheader(
+                "Observed evidence"
+            )
+
+            for evidence in observed_evidence:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(evidence))}",
+                    unsafe_allow_html=True,
+                )
+
+        warnings = get_value(
+            modality_insight,
+            "warnings",
+            [],
+        )
+
+        if warnings:
+
+            st.subheader(
+                "Modality warnings"
+            )
+
+            for warning in warnings:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(warning))}",
+                    unsafe_allow_html=True,
+                )
+
+
+    # ======================================================
+    # Experimental Design Intelligence
+    # ======================================================
+
+    design_insight = getattr(
+        result,
+        "design_insight",
+        None,
+    )
+
+    if design_insight is not None:
+
+        render_section_title(
+            "Experimental Design",
+            "Interpretation of the experimental structure supported by the available metadata.",
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            render_field(
+                "Condition",
+                get_value(
+                    design_insight,
+                    "condition",
+                ),
+                long=True,
+            )
+
+        with col2:
+
+            render_field(
+                "Control",
+                get_value(
+                    design_insight,
+                    "control",
+                ),
+                long=True,
+            )
+
+        with col3:
+
+            render_field(
+                "Treatment",
+                get_value(
+                    design_insight,
+                    "treatment",
+                ),
+                long=True,
+            )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            render_field(
+                "Time point",
+                get_value(
+                    design_insight,
+                    "time_point",
+                ),
+            )
+
+        with col2:
+
+            render_field(
+                "Replicate information",
+                get_value(
+                    design_insight,
+                    "replicate_information",
+                ),
+                long=True,
+            )
+
+        design_confidence = clean_ui_value(
+            get_value(
+                design_insight,
+                "design_confidence",
+            )
+        )
+
+        st.metric(
+            "Design confidence",
+            design_confidence,
+        )
+
+        design_description = get_value(
+            design_insight,
+            "design_description",
+            "",
+        )
+
+        if design_description:
+
+            st.subheader(
+                "Design interpretation"
+            )
+
+            st.markdown(
+                f"""
+                <div class="report-text">
+                    {escape(clean_ui_value(design_description))}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        warnings = get_value(
+            design_insight,
+            "warnings",
+            [],
+        )
+
+        if warnings:
+
+            st.subheader(
+                "Design warnings"
+            )
+
+            for warning in warnings:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(warning))}",
+                    unsafe_allow_html=True,
+                )
+
+        missing_information = get_value(
+            design_insight,
+            "missing_information",
+            [],
+        )
+
+        if missing_information:
+
+            st.subheader(
+                "Missing information"
+            )
+
+            for item in missing_information:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(item))}",
+                    unsafe_allow_html=True,
+                )
+
+
+    # ======================================================
+    # Dataset Suitability
+    # ======================================================
+
+    suitability_insight = getattr(
+        result,
+        "suitability_insight",
+        None,
+    )
+
+    if suitability_insight is not None:
+
+        render_section_title(
+            "Dataset Suitability",
+            "Assessment of whether the available evidence supports downstream RNA-seq analysis.",
+        )
+
+        overall = clean_ui_value(
+            get_value(
+                suitability_insight,
+                "overall",
+            )
+        )
+
+        score = get_value(
+            suitability_insight,
+            "score",
+            None,
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.metric(
+                "Overall assessment",
+                overall,
+            )
+
+        with col2:
+
+            st.metric(
+                "Suitability score",
+                clean_ui_value(score),
+            )
+
+        rationale = get_value(
+            suitability_insight,
+            "rationale",
+            "",
+        )
+
+        if rationale:
+
+            st.subheader(
+                "Rationale"
+            )
+
+            st.markdown(
+                f"""
+                <div class="report-text">
+                    {escape(clean_ui_value(rationale))}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        observed_evidence = get_value(
+            suitability_insight,
+            "observed_evidence",
+            [],
+        )
+
+        if observed_evidence:
+
+            st.subheader(
+                "Observed evidence"
+            )
+
+            for evidence in observed_evidence:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(evidence))}",
+                    unsafe_allow_html=True,
+                )
+
+        warnings = get_value(
+            suitability_insight,
+            "warnings",
+            [],
+        )
+
+        if warnings:
+
+            st.subheader(
+                "Warnings"
+            )
+
+            for warning in warnings:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(warning))}",
+                    unsafe_allow_html=True,
+                )
+
+        missing_information = get_value(
+            suitability_insight,
+            "missing_information",
+            [],
+        )
+
+        if missing_information:
+
+            st.subheader(
+                "Missing information"
+            )
+
+            for item in missing_information:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(item))}",
+                    unsafe_allow_html=True,
+                )
+
+
+    # ======================================================
+    # Analysis Planning
+    # ======================================================
+
+    analysis_plan = getattr(
+        result,
+        "analysis_plan",
+        None,
+    )
+
+    if analysis_plan is not None:
+
+        render_section_title(
+            "Analysis Plan",
+            "A provisional analysis workflow derived from the available dataset evidence and modality assessment.",
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            render_field(
+                "Workflow",
+                get_value(
+                    analysis_plan,
+                    "workflow",
+                ),
+                long=True,
+            )
+
+            render_field(
+                "Alignment",
+                get_value(
+                    analysis_plan,
+                    "alignment",
+                ),
+            )
+
+            render_field(
+                "Quantification",
+                get_value(
+                    analysis_plan,
+                    "quantification",
+                ),
+            )
+
+        with col2:
+
+            render_field(
+                "Differential analysis",
+                get_value(
+                    analysis_plan,
+                    "differential_analysis",
+                ),
+                long=True,
+            )
+
+            render_field(
+                "Design formula",
+                get_value(
+                    analysis_plan,
+                    "design_formula",
+                ),
+                long=True,
+            )
+
+            render_field(
+                "Replicate status",
+                get_value(
+                    analysis_plan,
+                    "replicate_status",
+                ),
+                long=True,
+            )
+
+        confidence = clean_ui_value(
+            get_value(
+                analysis_plan,
+                "confidence",
+            )
+        )
+
+        st.metric(
+            "Planning confidence",
+            confidence,
+        )
+
+        rationale = get_value(
+            analysis_plan,
+            "rationale",
+            "",
+        )
+
+        if rationale:
+
+            st.subheader(
+                "Planning rationale"
+            )
+
+            st.markdown(
+                f"""
+                <div class="report-text">
+                    {escape(clean_ui_value(rationale))}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        recommendations = get_value(
+            analysis_plan,
+            "recommendations",
+            [],
+        )
+
+        if recommendations:
+
+            st.subheader(
+                "Recommendations"
+            )
+
+            for recommendation in recommendations:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(recommendation))}",
+                    unsafe_allow_html=True,
+                )
+
+        warnings = get_value(
+            analysis_plan,
+            "warnings",
+            [],
+        )
+
+        if warnings:
+
+            st.subheader(
+                "Analysis warnings"
+            )
+
+            for warning in warnings:
+
+                st.markdown(
+                    f"- {escape(clean_ui_value(warning))}",
+                    unsafe_allow_html=True,
+                )
+
+
+    # ======================================================
     # Metadata Quality
     # ======================================================
 
@@ -1673,22 +2678,89 @@ def build_pdf(
 # Header
 # ==========================================================
 
-st.markdown(
+render_html(
     """
-    <div class="main-title">
-        🧬 RNASeq Navigator
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+<div class="rna-header">
 
-st.markdown(
+<div class="rna-brand">
+
+<div class="rna-logo">
+<svg viewBox="0 0 80 90" width="62" height="76" xmlns="http://www.w3.org/2000/svg">
+
+<path d="M18 8 C58 25, 58 65, 18 82"
+fill="none"
+stroke="#1768c8"
+stroke-width="5"/>
+
+<path d="M58 8 C18 25, 18 65, 58 82"
+fill="none"
+stroke="#1768c8"
+stroke-width="5"/>
+
+<line x1="27" y1="18" x2="49" y2="25"
+stroke="#1768c8" stroke-width="3"/>
+
+<line x1="22" y1="32" x2="54" y2="39"
+stroke="#1768c8" stroke-width="3"/>
+
+<line x1="22" y1="48" x2="54" y2="41"
+stroke="#1768c8" stroke-width="3"/>
+
+<line x1="27" y1="64" x2="49" y2="57"
+stroke="#1768c8" stroke-width="3"/>
+
+<path d="M48 50
+C61 37, 73 39, 75 37
+C72 54, 62 67, 45 67
+C47 60, 47 55, 48 50Z"
+fill="#4a9d43"/>
+
+<path d="M45 67
+C52 59, 59 51, 70 42"
+fill="none"
+stroke="#2e7734"
+stroke-width="2"/>
+
+</svg>
+</div>
+
+<div class="rna-brand-text">
+
+<div class="rna-title">
+RNASeq <span class="rna-title-green">Navigator</span>
+</div>
+
+<div class="rna-tagline">
+Explore <span>•</span>
+Interpret <span>•</span>
+Plan <span>•</span>
+Accelerate
+</div>
+
+</div>
+
+</div>
+
+<div class="rna-gateway">
+A gateway to public RNA-seq data
+</div>
+
+<div class="rna-impact">
+
+<div class="rna-impact-divider"></div>
+
+<div class="rna-leaf">🍃</div>
+
+<div class="rna-impact-text">
+Biology<br>
+Data<br>
+Impact
+</div>
+
+</div>
+
+</div>
     """
-    <div class="subtitle">
-        Explore information associated with an RNA-seq/SRA accession.
-    </div>
-    """,
-    unsafe_allow_html=True,
 )
 
 
@@ -2536,3 +3608,65 @@ else:
         "Enter an SRA accession above and click "
         "'Inspect Dataset' to begin."
     )
+
+
+# ==========================================================
+# Application Footer
+# ==========================================================
+
+render_html(
+    """
+<div class="rna-footer">
+
+<div class="rna-footer-left">
+
+<span class="rna-footer-brand">
+RNASeq Navigator
+</span>
+
+<span class="rna-footer-divider">|</span>
+
+<span>
+v0.1.0
+</span>
+
+<span class="rna-footer-divider">|</span>
+
+<span>
+An open-source project for the scientific community
+</span>
+
+</div>
+
+<div class="rna-footer-center">
+
+<span>
+Developed by
+</span>
+
+<span class="rna-footer-name">
+Dr. G. Shankar
+</span>
+
+<span class="rna-footer-divider">|</span>
+
+<span>
+🟢 0000-0002-8972-6670
+</span>
+
+<span class="rna-footer-divider">|</span>
+
+<span>
+✉ gshankar.bbau@gmail.com
+</span>
+
+</div>
+
+<div class="rna-footer-right">
+Data for a healthier planet<br>
+and a brighter tomorrow
+</div>
+
+</div>
+    """
+)
