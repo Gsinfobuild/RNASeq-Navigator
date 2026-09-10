@@ -1,9 +1,9 @@
 """
-RNASeq Navigator
+RNASeq Scout
 
 CLI Argument Parser
 
-Version: 1.0
+Version: 0.1.0
 
 Purpose
 -------
@@ -43,7 +43,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="rnaseq-nav",
         description=(
-            "RNASeq Navigator - Explore metadata associated "
+            "RNASeq Scout - Explore metadata associated "
             "with public sequencing datasets."
         ),
     )
@@ -51,7 +51,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="RNASeq Navigator 1.0.0",
+        version="RNASeq Scout 0.1.0",
     )
 
     # ------------------------------------------------------

@@ -360,7 +360,7 @@ def generate_modality_insight(metadata) -> ModalityInsight:
     )
 
     result.workflow_family = "Unknown"
-    result.rna_seq_compatible = False
+    result.rna_seq_compatible = None
     result.compatibility_status = "Uncertain"
     result.classification_confidence = "Low"
 

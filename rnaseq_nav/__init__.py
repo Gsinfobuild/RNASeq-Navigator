@@ -1,5 +1,5 @@
 """
-RNASeq Navigator
+RNASeq Scout
 ================
 
 A metadata intelligence and exploration platform for
@@ -25,14 +25,14 @@ report = navigator.inspect("SRR17730393")
 
 Version
 -------
-1.0
+0.1.0
 """
 
 from .navigator import RNASeqNavigator
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 
-__author__ = "RNASeq Navigator Project"
+__author__ = "RNASeq Scout Project"
 
 __all__ = [
     "RNASeqNavigator",

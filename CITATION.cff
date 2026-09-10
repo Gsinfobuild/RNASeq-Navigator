@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: "RNASeq Scout"
+message: "If you use RNASeq Scout in your research, please cite this software."
+type: software
+authors:
+  - family-names: "Shankar"
+    given-names: "Gauri"
+    orcid: "https://orcid.org/0000-0002-8972-6670"
+repository-code: "https://github.com/Gsinfobuild/RNASeq-Scout"
+version: "0.1.0"
+date-released: "2026-09-10"
+license: "MIT"
+keywords:
+  - RNA-seq
+  - transcriptomics
+  - bioinformatics
+  - experimental design
+  - metadata analysis
+  - sequencing
+  - NCBI SRA

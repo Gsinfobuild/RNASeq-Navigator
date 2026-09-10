@@ -1,13 +1,13 @@
 """
-RNASeq Navigator
+RNASeq Scout
 
 Command-Line Interface (CLI)
 
-Version: 1.0
+Version: 0.1.0
 
 Purpose
 -------
-Provides the public entry point for the RNASeq Navigator
+Provides the public entry point for the RNASeq Scout
 command-line interface.
 
 The CLI is responsible only for:
@@ -33,7 +33,7 @@ After installation:
 
 from .main import main
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 
 __all__ = [
     "main",

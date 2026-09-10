@@ -1,9 +1,9 @@
 """
-RNASeq Navigator
+RNASeq Scout
 
 Core Package
 
-Version: 1.0
+Version: 0.1.0
 
 Purpose
 -------
@@ -22,7 +22,7 @@ InspectionResult
 
 from .results import InspectionResult
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 
 __all__ = [
     "InspectionResult",
