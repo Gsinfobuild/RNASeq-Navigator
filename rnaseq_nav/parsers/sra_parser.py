@@ -17,13 +17,158 @@ RNASeq Navigator Project
 
 import xml.etree.ElementTree as ET
 
-from rnaseq_nav.models import Metadata
+from rnaseq_nav.models import Metadata, StudyExperiment
 
 
 class SRAParser:
     """
     Parser for NCBI SRA metadata.
     """
+
+    def parse_bioproject(
+        self,
+        bioproject_xml,
+    ) -> tuple[str, str]:
+        """
+        Parse BioProject XML and return the project title
+        and description.
+
+        Returns
+        -------
+        tuple[str, str]
+            (title, description)
+        """
+
+        if not bioproject_xml:
+            return "", ""
+
+        if isinstance(bioproject_xml, bytes):
+            bioproject_xml = bioproject_xml.decode(
+                "utf-8",
+                errors="replace",
+            )
+
+        root = ET.fromstring(bioproject_xml)
+
+        title = ""
+        description = ""
+
+        title_node = root.find(
+            ".//ProjectDescr/Title"
+        )
+
+        if title_node is not None and title_node.text:
+            title = title_node.text.strip()
+
+        description_node = root.find(
+            ".//ProjectDescr/Description"
+        )
+
+        if (
+            description_node is not None
+            and description_node.text
+        ):
+            description = description_node.text.strip()
+
+        return title, description
+
+
+    def parse_study_experiments(self, summaries) -> list[StudyExperiment]:
+        """
+        Parse study-level ESummary records into StudyExperiment objects.
+
+        Each ESummary record represents an SRA experiment and may
+        contain one or more associated runs.
+        """
+
+        study_experiments = []
+
+        for summary_wrapper in summaries:
+
+            if not summary_wrapper:
+                continue
+
+            record = summary_wrapper[0]
+
+            expxml = record.get("ExpXml", "")
+            runs_xml = record.get("Runs", "")
+
+            if not expxml:
+                continue
+
+            root = ET.fromstring(
+                f"<ROOT>{expxml}</ROOT>"
+            )
+
+            sample = root.find("Sample")
+            biosample = root.find("Biosample")
+            experiment = root.find("Experiment")
+            organism = root.find("Organism")
+
+            sample_accession = ""
+            biosample_accession = ""
+            experiment_accession = ""
+            experiment_title = ""
+            organism_name = ""
+            sample_name = ""
+
+            if sample is not None:
+                sample_accession = sample.attrib.get(
+                    "acc", ""
+                )
+                sample_name = sample.attrib.get(
+                    "name", ""
+                )
+
+            if biosample is not None and biosample.text:
+                biosample_accession = (
+                    biosample.text.strip()
+                )
+
+            if experiment is not None:
+                experiment_accession = experiment.attrib.get(
+                    "acc", ""
+                )
+                experiment_title = experiment.attrib.get(
+                    "name", ""
+                )
+
+            if organism is not None:
+                organism_name = organism.attrib.get(
+                    "ScientificName", ""
+                )
+
+            run_accessions = []
+
+            if runs_xml:
+                run_root = ET.fromstring(
+                    f"<ROOT>{runs_xml}</ROOT>"
+                )
+
+                for run in run_root.findall("Run"):
+                    accession = run.attrib.get(
+                        "acc", ""
+                    )
+
+                    if accession:
+                        run_accessions.append(
+                            accession
+                        )
+
+            study_experiments.append(
+                StudyExperiment(
+                    sample_accession=sample_accession,
+                    biosample_accession=biosample_accession,
+                    experiment_accession=experiment_accession,
+                    experiment_title=experiment_title,
+                    run_accessions=run_accessions,
+                    organism=organism_name,
+                    sample_name=sample_name,
+                )
+            )
+
+        return study_experiments
+
 
     def parse(self, expxml: str, runs_xml: str = "") -> Metadata:
         """

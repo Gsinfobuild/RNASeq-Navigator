@@ -9,10 +9,14 @@ Defines the standard result objects returned by the
 public RNASeqNavigator API.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
-from rnaseq_nav.models import Metadata
+from rnaseq_nav.models import (
+    Metadata,
+    StudyExperiment,
+    StudyExperimentalLandscape,
+)
 
 from rnaseq_nav.intelligence.report import (
     DatasetReport,
@@ -34,6 +38,10 @@ from rnaseq_nav.intelligence.suitability import (
     SuitabilityInsight,
 )
 
+from rnaseq_nav.intelligence.reanalysis_readiness import (
+    ReanalysisReadinessInsight,
+)
+
 from rnaseq_nav.intelligence.analysis_planner import (
     AnalysisPlan,
 )
@@ -45,6 +53,32 @@ from rnaseq_nav.normalization.normalizer import (
 from rnaseq_nav.validation.validator import (
     ValidationResult,
 )
+
+
+# ==========================================================
+# Experiment at a Glance
+# ==========================================================
+
+@dataclass
+class ExperimentAtGlance:
+    """
+    Study-level summary for rapid understanding of an
+    SRA experiment collection.
+
+    This object describes retrieved study information.
+    Experimental control/treatment interpretation remains
+    the responsibility of ExperimentalDesignInsight.
+    """
+
+    study_title: str = ""
+    study_description: str = ""
+
+    unique_sample_count: int = 0
+    unique_biosample_count: int = 0
+    experiment_count: int = 0
+    run_count: int = 0
+
+    study_experiments: list[StudyExperiment] = field(default_factory=list)
 
 
 # ==========================================================
@@ -71,6 +105,22 @@ class InspectionResult:
     # ------------------------------------------------------
 
     metadata: Optional[Metadata] = None
+
+    # ------------------------------------------------------
+    # Experiment at a Glance
+    # ------------------------------------------------------
+
+    experiment_at_glance: Optional[
+        ExperimentAtGlance
+    ] = None
+
+    # ------------------------------------------------------
+    # Study Experimental Landscape
+    # ------------------------------------------------------
+
+    study_experimental_landscape: Optional[
+        StudyExperimentalLandscape
+    ] = None
 
     # ------------------------------------------------------
     # Layer 1 — Metadata Intelligence
@@ -102,6 +152,14 @@ class InspectionResult:
 
     suitability_insight: Optional[
         SuitabilityInsight
+    ] = None
+
+    # ------------------------------------------------------
+    # Layer 3.5 — Reanalysis Readiness
+    # ------------------------------------------------------
+
+    reanalysis_readiness: Optional[
+        ReanalysisReadinessInsight
     ] = None
 
     # ------------------------------------------------------

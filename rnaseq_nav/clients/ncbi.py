@@ -138,6 +138,145 @@ class NCBIClient:
             ) from error
 
     # -----------------------------------------------------
+    # Fetch all records belonging to a study
+    # -----------------------------------------------------
+
+    def fetch_study(
+        self,
+        accession: str,
+        max_results: int = 1000,
+    ) -> List:
+
+        """
+        Retrieve all SRA records returned for a study-level
+        accession.
+
+        Unlike fetch(), which preserves the historical
+        single-record behavior, this method retrieves the
+        complete set of SRA records returned by Entrez.
+
+        Parameters
+        ----------
+        accession : str
+            Study-level accession such as SRP, ERP, or DRP.
+
+        max_results : int
+            Maximum number of SRA records to retrieve.
+
+        Returns
+        -------
+        List
+            Parsed ESummary records.
+        """
+
+        self._log(
+            f"Searching study accession: {accession}"
+        )
+
+        try:
+
+            handle = Entrez.esearch(
+                db="sra",
+                term=accession,
+                retmax=max_results,
+                retmode="xml",
+            )
+
+            try:
+                result = Entrez.read(handle)
+            finally:
+                handle.close()
+
+            ids = result.get("IdList", [])
+
+            self._log(
+                f"Study records found: {len(ids)}"
+            )
+
+            if not ids:
+                raise ValueError(
+                    f"No SRA records found for '{accession}'."
+                )
+
+            summaries = []
+
+            for uid in ids:
+
+                summaries.append(
+                    self._fetch_summary(uid)
+                )
+
+                if not self.api_key:
+                    time.sleep(0.34)
+                else:
+                    time.sleep(0.11)
+
+            return summaries
+
+        except Exception as error:
+
+            raise RuntimeError(
+                f"Failed to retrieve study '{accession}'. "
+                f"{type(error).__name__}: {error}"
+            ) from error
+
+    # -----------------------------------------------------
+    # Fetch BioProject record
+    # -----------------------------------------------------
+
+    def fetch_bioproject(
+        self,
+        accession: str,
+    ):
+        """
+        Retrieve the BioProject XML record for an accession.
+        """
+
+        self._log(
+            f"Fetching BioProject: {accession}"
+        )
+
+        try:
+
+            handle = Entrez.esearch(
+                db="bioproject",
+                term=accession,
+                retmode="xml",
+            )
+
+            try:
+                result = Entrez.read(handle)
+            finally:
+                handle.close()
+
+            ids = result.get("IdList", [])
+
+            if not ids:
+                raise ValueError(
+                    f"No BioProject record found for '{accession}'."
+                )
+
+            uid = ids[0]
+
+            handle = Entrez.efetch(
+                db="bioproject",
+                id=uid,
+                retmode="xml",
+            )
+
+            try:
+                return handle.read()
+            finally:
+                handle.close()
+
+        except Exception as error:
+
+            raise RuntimeError(
+                f"Failed to retrieve BioProject '{accession}'. "
+                f"{type(error).__name__}: {error}"
+            ) from error
+
+    # -----------------------------------------------------
     # Search
     # -----------------------------------------------------
 

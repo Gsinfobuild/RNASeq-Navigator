@@ -83,8 +83,94 @@ class DatasetDiscovery:
         return self.parser.parse(summary)
 
     # ---------------------------------------------------------
+    # Study-level retrieval
+    # ---------------------------------------------------------
+
+    def fetch_study(
+        self,
+        accession: str,
+    ):
+        """
+        Retrieve all experiment records belonging to a study.
+
+        Parameters
+        ----------
+        accession : str
+            Study-level accession such as SRP, ERP, or DRP.
+
+        Returns
+        -------
+        list[StudyExperiment]
+            Experiment-level records associated with the study.
+        """
+
+        summaries = self.client.fetch_study(
+            accession
+        )
+
+        return self.parser.parse_study_experiments(
+            summaries
+        )
+
+    # ---------------------------------------------------------
     # PUBLIC API (STABLE)
     # ---------------------------------------------------------
+
+    def fetch_experiment_at_a_glance(
+        self,
+        accession: str,
+    ):
+        """
+        Retrieve the study-level information required to build
+        an Experiment-at-a-Glance summary.
+
+        Returns
+        -------
+        dict
+            Contains study experiments and associated BioProject
+            title/description.
+        """
+
+        study_experiments = self.fetch_study(accession)
+
+        project_accession = ""
+
+        if study_experiments:
+            first = study_experiments[0]
+
+            # BioProject accession is not currently stored in
+            # StudyExperiment, so obtain it from the canonical
+            # single-record metadata retrieval.
+            metadata = self.fetch(accession)
+
+            project_accession = (
+                metadata.project.accession
+            )
+
+        project_title = ""
+        project_description = ""
+
+        if project_accession:
+            bioproject_xml = (
+                self.client.fetch_bioproject(
+                    project_accession
+                )
+            )
+
+            (
+                project_title,
+                project_description,
+            ) = self.parser.parse_bioproject(
+                bioproject_xml
+            )
+
+        return {
+            "study_experiments": study_experiments,
+            "project_accession": project_accession,
+            "project_title": project_title,
+            "project_description": project_description,
+        }
+
 
     def search(
         self,

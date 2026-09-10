@@ -30,6 +30,8 @@ Pipeline
       ↓
     Dataset Suitability
       ↓
+    Reanalysis Readiness
+      ↓
     Analysis Planning
       ↓
     Interpret
@@ -67,6 +69,10 @@ from rnaseq_nav.intelligence.metadata_intelligence import (
     generate_metadata_insight,
 )
 
+from rnaseq_nav.intelligence.study_landscape import (
+    generate_study_experimental_landscape,
+)
+
 from rnaseq_nav.intelligence.modality_intelligence import (
     generate_modality_insight,
 )
@@ -77,6 +83,10 @@ from rnaseq_nav.intelligence.design_intelligence import (
 
 from rnaseq_nav.intelligence.suitability import (
     generate_suitability_insight,
+)
+
+from rnaseq_nav.intelligence.reanalysis_readiness import (
+    generate_reanalysis_readiness,
 )
 
 from rnaseq_nav.intelligence.analysis_planner import (
@@ -249,6 +259,57 @@ class RNASeqNavigator:
     # Inspect
     # ======================================================
 
+    def _build_experiment_at_a_glance(
+        self,
+        accession: str,
+    ):
+        """
+        Build a study-level ExperimentAtGlance summary.
+
+        Study-level retrieval is performed only for study accessions.
+        """
+
+        from rnaseq_nav.core.results import ExperimentAtGlance
+
+        if not accession.startswith(("SRP", "ERP", "DRP")):
+            return None
+
+        context = self.discovery.fetch_experiment_at_a_glance(
+            accession
+        )
+
+        study_experiments = context["study_experiments"]
+
+        unique_samples = {
+            item.sample_accession
+            for item in study_experiments
+            if item.sample_accession
+        }
+
+        unique_biosamples = {
+            item.biosample_accession
+            for item in study_experiments
+            if item.biosample_accession
+        }
+
+        run_accessions = {
+            run_accession
+            for item in study_experiments
+            for run_accession in item.run_accessions
+            if run_accession
+        }
+
+        return ExperimentAtGlance(
+            study_title=context["project_title"],
+            study_description=context["project_description"],
+            unique_sample_count=len(unique_samples),
+            unique_biosample_count=len(unique_biosamples),
+            experiment_count=len(study_experiments),
+            run_count=len(run_accessions),
+            study_experiments=study_experiments,
+        )
+
+
     def inspect(
         self,
         accession: str,
@@ -262,37 +323,28 @@ class RNASeqNavigator:
         1. Fetch metadata
         2. Normalize metadata
         3. Validate normalized metadata
-        4. Generate metadata intelligence
-        5. Classify sequencing modality and workflow compatibility
-        6. Generate experimental design intelligence
-        7. Generate dataset suitability assessment
-        8. Generate contextual analysis plan
-        9. Interpret normalized metadata
-        10. Build dataset report
-        11. Return InspectionResult
+        4. Build study-level Experiment-at-a-Glance summary when applicable
+        5. Generate metadata intelligence
+        6. Classify sequencing modality and workflow compatibility
+        7. Generate experimental design intelligence
+        8. Generate dataset suitability assessment
+        9. Generate evidence-based reanalysis readiness assessment
+        10. Generate contextual analysis plan
+        11. Interpret normalized metadata
+        12. Build dataset report
+        13. Return InspectionResult
 
         Parameters
         ----------
         accession : str
-            SRA accession such as SRR17730393.
+            SRA accession such as SRR17730393 or SRP356545.
 
         Returns
         -------
         InspectionResult
-            Structured inspection result containing:
-
-            - success
-            - accession
-            - metadata
-            - metadata_insight
-            - modality_insight
-            - design_insight
-            - suitability_insight
-            - analysis_plan
-            - normalization
-            - validation
-            - report
-            - error
+            Structured inspection result containing metadata,
+            study-level context when applicable, intelligence
+            layers, analysis planning, and dataset report.
         """
 
         try:
@@ -334,14 +386,51 @@ class RNASeqNavigator:
 
             # ------------------------------------------------
             # Step 4
-            # Metadata Intelligence
+            # Experiment at a Glance
             # ------------------------------------------------
             #
-            # Layer 1 converts normalized metadata into
-            # a concise biological interpretation.
+            # Study-level enrichment is performed only for
+            # study accessions. We deliberately do not retrieve
+            # every experiment in a study when the user enters
+            # an individual run or experiment accession.
             #
-            # This layer intentionally avoids making
-            # unsupported experimental claims.
+            # This keeps run-level inspection lightweight while
+            # allowing study accessions to provide a broader
+            # experimental context.
+
+            experiment_at_glance = (
+                self._build_experiment_at_a_glance(
+                    accession
+                )
+            )
+
+            # ------------------------------------------------
+            # Step 5
+            # Study Experimental Landscape
+            # ------------------------------------------------
+            #
+            # Reuse the study-level experiment records already
+            # retrieved for Experiment-at-a-Glance. No second
+            # study-level NCBI retrieval is performed here.
+            #
+            # This layer describes observed assay families and
+            # experimental context labels. It does not infer
+            # controls, treatments, replicates, time points, or
+            # statistical contrasts.
+
+            study_experimental_landscape = None
+
+            if experiment_at_glance is not None:
+                study_experimental_landscape = (
+                    generate_study_experimental_landscape(
+                        experiment_at_glance.study_experiments
+                    )
+                )
+
+            # ------------------------------------------------
+            # Step 6
+            # Metadata Intelligence
+            # ------------------------------------------------
 
             metadata_insight = (
                 generate_metadata_insight(
@@ -350,21 +439,9 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 5
+            # Step 7
             # Modality / Workflow Intelligence
             # ------------------------------------------------
-            #
-            # Layer 1.5 determines what kind of sequencing
-            # experiment is represented by the available
-            # library metadata.
-            #
-            # This classification acts as an important
-            # workflow-compatibility gate. The navigator must
-            # not assume that every sequencing dataset is
-            # appropriate for conventional RNA-seq analysis.
-            #
-            # Explicit library strategy is treated as the
-            # primary evidence.
 
             modality_insight = (
                 generate_modality_insight(
@@ -373,18 +450,9 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 6
+            # Step 8
             # Experimental Design Intelligence
             # ------------------------------------------------
-            #
-            # Layer 2 evaluates the available metadata for
-            # possible experimental design information.
-            #
-            # The design intelligence layer distinguishes
-            # observed metadata from cautious inference.
-            #
-            # It must not assume that sequencing runs are
-            # biological replicates.
 
             design_insight = (
                 generate_design_insight(
@@ -393,22 +461,9 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 7
+            # Step 9
             # Dataset Suitability
             # ------------------------------------------------
-            #
-            # Layer 3 evaluates whether the available
-            # metadata provides enough evidence to consider
-            # the dataset potentially suitable for analysis.
-            #
-            # The suitability function accepts:
-            #
-            #     metadata
-            #     design_insight
-            #     modality_insight
-            #
-            # Modality compatibility is evaluated before
-            # generic RNA-seq suitability scoring.
 
             suitability_insight = (
                 generate_suitability_insight(
@@ -419,19 +474,32 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 8
-            # Analysis Planning
+            # Step 10
+            # Reanalysis Readiness
             # ------------------------------------------------
             #
-            # Layer 4 generates a contextual analysis plan
-            # using the outputs of Layers 1–3.
+            # This layer assesses whether the available public
+            # metadata provide enough evidence for defensible
+            # downstream reanalysis. It does not replace
+            # dataset suitability and does not infer missing
+            # experimental design information.
             #
-            # The planner expects exactly four arguments:
-            #
-            #     metadata
-            #     metadata_insight
-            #     design_insight
-            #     suitability_insight
+
+            reanalysis_readiness = (
+                generate_reanalysis_readiness(
+                    normalized_metadata,
+                    modality_insight,
+                    design_insight,
+                    suitability_insight,
+                    experiment_at_glance,
+                    study_experimental_landscape,
+                )
+            )
+
+            # ------------------------------------------------
+            # Step 11
+            # Analysis Planning
+            # ------------------------------------------------
 
             analysis_plan = (
                 generate_analysis_plan(
@@ -444,16 +512,9 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 9
+            # Step 11
             # Interpret metadata
             # ------------------------------------------------
-            #
-            # DatasetInterpreter.describe() returns:
-            #
-            #     DatasetDescription
-            #
-            # DatasetReportBuilder.build() expects this
-            # object as its fourth argument.
 
             description = (
                 self.interpreter.describe(
@@ -462,7 +523,7 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 10
+            # Step 12
             # Build report
             # ------------------------------------------------
 
@@ -476,7 +537,7 @@ class RNASeqNavigator:
             )
 
             # ------------------------------------------------
-            # Step 11
+            # Step 13
             # Return successful result
             # ------------------------------------------------
 
@@ -488,6 +549,12 @@ class RNASeqNavigator:
 
                 metadata=normalized_metadata,
 
+                experiment_at_glance=experiment_at_glance,
+
+                study_experimental_landscape=(
+                    study_experimental_landscape
+                ),
+
                 metadata_insight=metadata_insight,
 
                 modality_insight=modality_insight,
@@ -495,6 +562,8 @@ class RNASeqNavigator:
                 design_insight=design_insight,
 
                 suitability_insight=suitability_insight,
+
+                reanalysis_readiness=reanalysis_readiness,
 
                 analysis_plan=analysis_plan,
 
@@ -513,9 +582,6 @@ class RNASeqNavigator:
             # ------------------------------------------------
             # Controlled failure
             # ------------------------------------------------
-            #
-            # The UI/CLI receives a structured failure instead
-            # of an unhandled exception.
 
             return InspectionResult(
 
@@ -525,6 +591,10 @@ class RNASeqNavigator:
 
                 metadata=None,
 
+                experiment_at_glance=None,
+
+                study_experimental_landscape=None,
+
                 metadata_insight=None,
 
                 modality_insight=None,
@@ -532,6 +602,8 @@ class RNASeqNavigator:
                 design_insight=None,
 
                 suitability_insight=None,
+
+                reanalysis_readiness=None,
 
                 analysis_plan=None,
 

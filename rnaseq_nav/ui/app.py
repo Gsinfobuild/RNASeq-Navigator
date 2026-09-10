@@ -2305,6 +2305,338 @@ def build_pdf(
 
 
     # ======================================================
+    # Reanalysis Readiness
+    # ======================================================
+
+    reanalysis_readiness = getattr(
+        result,
+        "reanalysis_readiness",
+        None,
+    )
+
+    if reanalysis_readiness is not None:
+
+        render_section_title(
+            "Reanalysis Readiness",
+            "Evidence-based assessment of whether the available metadata support defensible downstream reanalysis.",
+        )
+
+        verdict = clean_ui_value(
+            get_value(
+                reanalysis_readiness,
+                "verdict",
+            )
+        )
+
+        rationale = clean_ui_value(
+            get_value(
+                reanalysis_readiness,
+                "rationale",
+                "",
+            )
+        )
+
+        # --------------------------------------------------
+        # Decision card
+        # --------------------------------------------------
+
+        verdict_html = escape(
+            verdict,
+            quote=True,
+        )
+
+        rationale_html = escape(
+            rationale,
+            quote=True,
+        )
+
+        st.html(
+            f"""
+<div style="
+    border: 1px solid rgba(128,128,128,0.30);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 8px 0 20px 0;
+">
+    <div style="
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.70;
+        margin-bottom: 6px;
+">
+        Readiness verdict
+    </div>
+
+    <div style="
+        font-size: 1.45rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+">
+        {verdict_html}
+    </div>
+
+    <div style="
+        font-size: 0.95rem;
+        line-height: 1.55;
+">
+        {rationale_html}
+    </div>
+</div>
+"""
+        )
+
+        # --------------------------------------------------
+        # Study-level evidence snapshot
+        # --------------------------------------------------
+
+        experiment_at_glance = getattr(
+            result,
+            "experiment_at_glance",
+            None,
+        )
+
+        landscape = getattr(
+            result,
+            "study_experimental_landscape",
+            None,
+        )
+
+        if experiment_at_glance is not None or landscape is not None:
+
+            st.subheader(
+                "Evidence snapshot"
+            )
+
+            snapshot_values = []
+
+            if experiment_at_glance is not None:
+
+                experiment_count = get_value(
+                    experiment_at_glance,
+                    "experiment_count",
+                    None,
+                )
+
+                run_count = get_value(
+                    experiment_at_glance,
+                    "run_count",
+                    None,
+                )
+
+                if experiment_count is not None:
+                    snapshot_values.append(
+                        ("Experiments", experiment_count)
+                    )
+
+                if run_count is not None:
+                    snapshot_values.append(
+                        ("Runs", run_count)
+                    )
+
+            if landscape is not None:
+
+                assay_counts = get_value(
+                    landscape,
+                    "assay_family_counts",
+                    {},
+                )
+
+                contexts = get_value(
+                    landscape,
+                    "observed_contexts",
+                    [],
+                )
+
+                if assay_counts:
+                    snapshot_values.append(
+                        ("Assay families", len(assay_counts))
+                    )
+
+                if contexts:
+                    snapshot_values.append(
+                        ("Experimental contexts", len(contexts))
+                    )
+
+            if snapshot_values:
+
+                columns = st.columns(
+                    len(snapshot_values)
+                )
+
+                for column, (label, value) in zip(
+                    columns,
+                    snapshot_values,
+                ):
+                    with column:
+                        st.metric(
+                            label,
+                            clean_ui_value(value),
+                        )
+
+        # --------------------------------------------------
+        # Categorized evidence
+        # --------------------------------------------------
+
+        observed_evidence = get_value(
+            reanalysis_readiness,
+            "observed_evidence",
+            [],
+        )
+
+        inferred_evidence = get_value(
+            reanalysis_readiness,
+            "inferred_evidence",
+            [],
+        )
+
+        not_established = get_value(
+            reanalysis_readiness,
+            "not_established",
+            [],
+        )
+
+        missing_information = get_value(
+            reanalysis_readiness,
+            "missing_information",
+            [],
+        )
+
+        warnings = get_value(
+            reanalysis_readiness,
+            "warnings",
+            [],
+        )
+
+        # --------------------------------------------------
+        # Established evidence
+        # --------------------------------------------------
+
+        if observed_evidence:
+
+            st.subheader(
+                "Established evidence"
+            )
+
+            for item in observed_evidence:
+
+                clean_item = escape(
+                    clean_ui_value(item),
+                    quote=True,
+                )
+
+                st.html(
+                    f"""
+<div style="
+    margin: 5px 0;
+    padding: 7px 10px;
+    border-left: 3px solid rgba(128,128,128,0.45);
+    line-height: 1.45;
+">
+    ✓ {clean_item}
+</div>
+"""
+                )
+
+        # --------------------------------------------------
+        # Inferred evidence
+        # --------------------------------------------------
+
+        if inferred_evidence:
+
+            with st.expander(
+                "Inferred evidence",
+                expanded=False,
+            ):
+
+                for item in inferred_evidence:
+
+                    st.markdown(
+                        f"- {escape(clean_ui_value(item))}",
+                        unsafe_allow_html=True,
+                    )
+
+        # --------------------------------------------------
+        # Not established
+        # --------------------------------------------------
+
+        if not_established:
+
+            st.subheader(
+                "Not established"
+            )
+
+            for item in not_established:
+
+                clean_item = escape(
+                    clean_ui_value(item),
+                    quote=True,
+                )
+
+                st.html(
+                    f"""
+<div style="
+    margin: 5px 0;
+    padding: 7px 10px;
+    border-left: 3px solid rgba(128,128,128,0.45);
+    line-height: 1.45;
+">
+    ! {clean_item}
+</div>
+"""
+                )
+
+        # --------------------------------------------------
+        # Missing information
+        # --------------------------------------------------
+
+        if missing_information:
+
+            st.subheader(
+                "Missing information"
+            )
+
+            for item in missing_information:
+
+                clean_item = escape(
+                    clean_ui_value(item),
+                    quote=True,
+                )
+
+                st.html(
+                    f"""
+<div style="
+    margin: 5px 0;
+    padding: 7px 10px;
+    border-left: 3px solid rgba(128,128,128,0.45);
+    line-height: 1.45;
+">
+    ? {clean_item}
+</div>
+"""
+                )
+
+        # --------------------------------------------------
+        # Warnings
+        # --------------------------------------------------
+
+        if warnings:
+
+            with st.expander(
+                f"Warnings ({len(warnings)})",
+                expanded=True,
+            ):
+
+                for warning in warnings:
+
+                    st.markdown(
+                        f"- {escape(clean_ui_value(warning))}",
+                        unsafe_allow_html=True,
+                    )
+
+
+    # ======================================================
     # Analysis Planning
     # ======================================================
 
@@ -2449,6 +2781,179 @@ def build_pdf(
                     f"- {escape(clean_ui_value(warning))}",
                     unsafe_allow_html=True,
                 )
+
+
+    # ======================================================
+    # Study Experimental Landscape
+    # ======================================================
+    #
+    # Descriptive study-level summary of observed assay
+    # families and experimental context labels.
+    #
+    # This section does not infer controls, treatments,
+    # biological replicates, time points, or statistical
+    # contrasts.
+
+    study_experimental_landscape = get_value(
+        result,
+        "study_experimental_landscape",
+        None,
+    )
+
+    if study_experimental_landscape is not None:
+
+        render_section_title(
+            "Study Experimental Landscape",
+            "Observed assay families and experimental contexts across the study.",
+        )
+
+        assay_family_counts = get_value(
+            study_experimental_landscape,
+            "assay_family_counts",
+            {},
+        )
+
+        context_counts = get_value(
+            study_experimental_landscape,
+            "context_counts",
+            {},
+        )
+
+        assay_context_counts = get_value(
+            study_experimental_landscape,
+            "assay_context_counts",
+            {},
+        )
+
+        warnings = get_value(
+            study_experimental_landscape,
+            "warnings",
+            [],
+        )
+
+        # --------------------------------------------------
+        # Assay Families
+        # --------------------------------------------------
+
+        st.subheader("Assay Families")
+
+        if assay_family_counts:
+
+            assay_columns = st.columns(
+                min(len(assay_family_counts), 4)
+            )
+
+            for index, (assay, count) in enumerate(
+                assay_family_counts.items()
+            ):
+
+                with assay_columns[
+                    index % len(assay_columns)
+                ]:
+
+                    st.metric(
+                        clean_ui_value(assay),
+                        clean_ui_value(count),
+                    )
+
+        else:
+
+            st.info(
+                "No assay-family information was observed."
+            )
+
+        # --------------------------------------------------
+        # Experimental Contexts
+        # --------------------------------------------------
+
+        st.subheader("Experimental Contexts")
+
+        if context_counts:
+
+            context_columns = st.columns(
+                min(len(context_counts), 4)
+            )
+
+            for index, (context, count) in enumerate(
+                context_counts.items()
+            ):
+
+                with context_columns[
+                    index % len(context_columns)
+                ]:
+
+                    st.metric(
+                        clean_ui_value(context),
+                        clean_ui_value(count),
+                    )
+
+        else:
+
+            st.info(
+                "No experimental-context labels were observed."
+            )
+
+        # --------------------------------------------------
+        # Assay × Context
+        # --------------------------------------------------
+
+        st.subheader("Assay × Context")
+
+        if assay_context_counts:
+
+            for assay, contexts in assay_context_counts.items():
+
+                st.markdown(
+                    f"**{clean_ui_value(assay)}**"
+                )
+
+                if contexts:
+
+                    context_columns = st.columns(
+                        min(len(contexts), 4)
+                    )
+
+                    for index, (context, count) in enumerate(
+                        contexts.items()
+                    ):
+
+                        with context_columns[
+                            index % len(context_columns)
+                        ]:
+
+                            st.metric(
+                                clean_ui_value(context),
+                                clean_ui_value(count),
+                            )
+
+                else:
+
+                    st.write(
+                        "No observed context labels."
+                    )
+
+        else:
+
+            st.info(
+                "No assay × context information was observed."
+            )
+
+        # --------------------------------------------------
+        # Warnings
+        # --------------------------------------------------
+
+        if warnings:
+
+            with st.expander(
+                "Landscape warnings",
+                expanded=False,
+            ):
+
+                for warning in warnings:
+
+                    st.warning(
+                        clean_ui_value(warning)
+                    )
 
 
     # ======================================================
@@ -3267,6 +3772,122 @@ if inspect_clicked:
             "Public",
             clean_ui_value(public),
         )
+
+
+    # ======================================================
+    # Experiment at a Glance
+    # ======================================================
+    #
+    # Study-level context retrieved by the navigator.
+    # This section is available for study accessions such as
+    # SRP, ERP, and DRP. Individual run/experiment accessions
+    # intentionally do not trigger study-wide retrieval.
+
+    experiment_at_glance = get_value(
+        result,
+        "experiment_at_glance",
+        None,
+    )
+
+    if experiment_at_glance is not None:
+
+        render_section_title(
+            "Experiment at a Glance",
+            "Study-level context for rapid understanding of the experiment collection.",
+        )
+
+        study_title = get_value(
+            experiment_at_glance,
+            "study_title",
+            "",
+        )
+
+        study_description = get_value(
+            experiment_at_glance,
+            "study_description",
+            "",
+        )
+
+        unique_sample_count = get_value(
+            experiment_at_glance,
+            "unique_sample_count",
+            0,
+        )
+
+        unique_biosample_count = get_value(
+            experiment_at_glance,
+            "unique_biosample_count",
+            0,
+        )
+
+        experiment_count = get_value(
+            experiment_at_glance,
+            "experiment_count",
+            0,
+        )
+
+        run_count = get_value(
+            experiment_at_glance,
+            "run_count",
+            0,
+        )
+
+        if study_title:
+
+            st.subheader(
+                clean_ui_value(study_title)
+            )
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+
+            st.metric(
+                "SRA samples",
+                clean_ui_value(
+                    unique_sample_count
+                ),
+            )
+
+        with col2:
+
+            st.metric(
+                "BioSamples",
+                clean_ui_value(
+                    unique_biosample_count
+                ),
+            )
+
+        with col3:
+
+            st.metric(
+                "Experiments",
+                clean_ui_value(
+                    experiment_count
+                ),
+            )
+
+        with col4:
+
+            st.metric(
+                "Runs",
+                clean_ui_value(
+                    run_count
+                ),
+            )
+
+        if study_description:
+
+            with st.expander(
+                "Study description",
+                expanded=False,
+            ):
+
+                st.write(
+                    clean_ui_value(
+                        study_description
+                    )
+                )
 
 
     # ======================================================
